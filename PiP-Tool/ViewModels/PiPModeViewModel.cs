@@ -275,14 +275,16 @@ namespace PiP_Tool.ViewModels
                 return;
 
             var dest = new NativeStructs.Rect(0, _heightOffset, (int)(_width * _dpiX), (int)(_height * _dpiY));
-
+            var rcSource = _selectedWindow.SelectedRegion;
+            rcSource = new NativeStructs.Rect(rcSource);
+            rcSource.Top = rcSource.Top + _heightOffset;
             var props = new NativeStructs.DwmThumbnailProperties
             {
                 fVisible = true,
                 dwFlags = (int)(DWM_TNP.DWM_TNP_VISIBLE | DWM_TNP.DWM_TNP_RECTDESTINATION | DWM_TNP.DWM_TNP_OPACITY | DWM_TNP.DWM_TNP_RECTSOURCE),
                 opacity = 255,
                 rcDestination = dest,
-                rcSource = _selectedWindow.SelectedRegion
+                rcSource = rcSource
             };
 
             NativeMethods.DwmUpdateThumbnailProperties(_thumbHandle, ref props);
@@ -407,8 +409,11 @@ namespace PiP_Tool.ViewModels
                 HwndSource.FromHwnd(hwnd)?.RootVisual == null) return IntPtr.Zero;
 
             var topBarHeight = 0;
+            
+            /*
             if (TopBarIsVisible)
                 topBarHeight = TopBarHeight;
+            */
 
             position.cx = (int)((position.cy - topBarHeight) * Ratio);
 
@@ -481,10 +486,11 @@ namespace PiP_Tool.ViewModels
                 return;
             _renderSizeEventDisabled = true;
             TopBarVisibility = Visibility.Visible;
+            var topBarHeight = 0; // TopBarHeight;
             _heightOffset = (int)(TopBarHeight * _dpiY);
-            Top = Top - TopBarHeight;
-            Height = Height + TopBarHeight;
-            MinHeight = MinHeight + TopBarHeight;
+            Top = Top - topBarHeight;
+            Height = Height + topBarHeight;
+            MinHeight = MinHeight + topBarHeight;
             _renderSizeEventDisabled = false;
             e.Handled = true;
         }
@@ -506,9 +512,11 @@ namespace PiP_Tool.ViewModels
             TopBarVisibility = Visibility.Hidden;
             _renderSizeEventDisabled = true;
             _heightOffset = 0;
-            Top = Top + TopBarHeight;
-            MinHeight = MinHeight - TopBarHeight;
-            Height = Height - TopBarHeight;
+
+            var topBarHeight = 0; // TopBarHeight;
+            Top = Top + topBarHeight;
+            MinHeight = MinHeight - topBarHeight;
+            Height = Height - topBarHeight;
             _renderSizeEventDisabled = false;
             e.Handled = true;
         }

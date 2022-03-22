@@ -79,6 +79,8 @@ namespace PiP_Tool.Native
 
             public Rect(Rectangle r) : this(r.Left, r.Top, r.Right, r.Bottom) { }
 
+            public Rect(Rect r) : this(r.Left, r.Top, r.Right, r.Bottom) { }
+
             public int X
             {
                 get => Left;
