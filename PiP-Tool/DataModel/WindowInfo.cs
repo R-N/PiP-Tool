@@ -9,12 +9,15 @@ using Size = System.Drawing.Size;
 
 namespace PiP_Tool.DataModel
 {
-    public class WindowInfo
+    public class WindowInfo : IDisposable
     {
 
         #region public
 
         public IntPtr Handle { get; }
+
+        public int ProcessId { get; private set; }
+        public System.Diagnostics.Process Process { get; private set; }
         public string Program { get; private set; }
         public string Title { get; private set; }
         public float DpiX { get; private set; }
@@ -63,6 +66,8 @@ namespace PiP_Tool.DataModel
         {
             GetDpi();
             GetSizeAndPosition();
+            GetProcessId();
+            GetProcess();
             GetProgram();
             GetTitle();
             GetWinInfo();
@@ -103,14 +108,32 @@ namespace PiP_Tool.DataModel
         }
 
         /// <summary>
-        /// Get window program
+        /// Get window PID
+        /// </summary>
+        private void GetProcessId()
+        {
+            NativeMethods.GetWindowThreadProcessId(Handle, out var processId);
+            ProcessId = (int)processId;
+        }
+
+        /// <summary>
+        /// Get window process
+        /// </summary>
+        private void GetProcess()
+        {
+            if (ProcessId == 0)
+                return;
+            this.Process = System.Diagnostics.Process.GetProcessById(ProcessId);
+        }
+
+
+        /// <summary>
+        /// Get window program name
         /// </summary>
         private void GetProgram()
         {
-            NativeMethods.GetWindowThreadProcessId(Handle, out var processId);
-            if (processId == 0)
-                return;
-            Program = Process.GetProcessById((int)processId).ProcessName;
+            if (Process != null)
+                Program = this.Process.ProcessName;
         }
 
         /// <summary>
@@ -188,6 +211,11 @@ namespace PiP_Tool.DataModel
         public override int GetHashCode()
         {
             return Handle.GetHashCode();
+        }
+
+        public void Dispose()
+        {
+            this.Process?.Dispose();
         }
 
         /// <summary>

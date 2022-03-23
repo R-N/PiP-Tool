@@ -1,11 +1,14 @@
 ﻿using System;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
+using Rectangle = System.Drawing.Rectangle;
+using WPoint = System.Windows.Point;
+using DPoint = System.Drawing.Point;
+using Screen = System.Windows.Forms.Screen;
+using Button = System.Windows.Controls.Button;
 using System.Windows.Input;
 using System.Windows.Interop;
 using GalaSoft.MvvmLight;
@@ -20,6 +23,8 @@ using PiP_Tool.Views;
 using Application = System.Windows.Application;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Point = System.Drawing.Point;
+using PiP_Tool.Classes;
+using CSCore.CoreAudioAPI;
 
 namespace PiP_Tool.ViewModels
 {
@@ -52,6 +57,7 @@ namespace PiP_Tool.ViewModels
         public ICommand CloseCommand { get; }
         public ICommand ClosingCommand { get; }
         public ICommand ChangeSelectedWindowCommand { get; }
+        public ICommand SetVolumeCommand { get; }
         public ICommand MouseEnterCommand { get; }
         public ICommand MouseLeaveCommand { get; }
         public ICommand DpiChangedCommand { get; }
@@ -180,6 +186,7 @@ namespace PiP_Tool.ViewModels
 
         private CancellationTokenSource _mlSource;
         private CancellationToken _mlToken;
+        private VolumeDialog volumeDialog = null;
 
         #endregion
 
@@ -195,6 +202,7 @@ namespace PiP_Tool.ViewModels
             CloseCommand = new RelayCommand(CloseCommandExecute);
             ClosingCommand = new RelayCommand(ClosingCommandExecute);
             ChangeSelectedWindowCommand = new RelayCommand(ChangeSelectedWindowCommandExecute);
+            SetVolumeCommand = new RelayCommand<object>(SetVolumeCommandExecute);
             MouseEnterCommand = new RelayCommand<MouseEventArgs>(MouseEnterCommandExecute);
             MouseLeaveCommand = new RelayCommand<MouseEventArgs>(MouseLeaveCommandExecute);
             DpiChangedCommand = new RelayCommand(DpiChangedCommandExecute);
@@ -474,6 +482,67 @@ namespace PiP_Tool.ViewModels
             var mainWindow = new MainWindow();
             mainWindow.Show();
             CloseCommandExecute();
+        }
+
+        private double GetWindowLeft(Window window)
+        {
+            if (window.WindowState == WindowState.Maximized)
+            {
+                var leftField = typeof(Window).GetField("_actualLeft", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                return (double)leftField.GetValue(window);
+            }
+            else
+                return window.Left;
+        }
+
+        private double GetWindowTop(Window window)
+        {
+            if (window.WindowState == WindowState.Maximized)
+            {
+                var leftField = typeof(Window).GetField("_actualTop", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                return (double)leftField.GetValue(window);
+            }
+            else
+                return window.Top;
+        }
+
+        /// <summary>
+        /// Executed on click on set volume button. Opens <see cref="VolumeDialog"/>
+        /// </summary>
+        private void SetVolumeCommandExecute(object button)
+        {
+            if (volumeDialog != null)
+                volumeDialog.Close();
+            var thisWindow = ThisWindow();
+            var volumeButton = (Button)button;
+            var buttonPosition = volumeButton.TransformToAncestor(thisWindow).Transform(new WPoint(0, 0));
+            
+            volumeDialog = new VolumeDialog();
+            volumeDialog.Owner = thisWindow;
+            volumeDialog.Top = thisWindow.Top + buttonPosition.Y + volumeButton.Height;
+            volumeDialog.Left = thisWindow.Left + buttonPosition.X;
+            volumeDialog.Closed += OnVolumeDialogClose;
+
+            var selectedWindow = new ProcessInfo(this._selectedWindow.WindowInfo);
+            var audioControls = new AudioControls(selectedWindow);
+
+            var task = Task.Run(() => {
+                audioControls.GetControls(DataFlow.Render);
+            });
+            task.Wait();
+            if (!audioControls.HasControls)
+            {
+                volumeDialog.Close();
+                return;
+            }
+            MessengerInstance.Send(audioControls);
+            volumeDialog.Show();
+
+        }
+
+        private void OnVolumeDialogClose(object source, System.EventArgs e)
+        {
+            volumeDialog = null;
         }
 
         /// <summary>

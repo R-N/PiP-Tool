@@ -31,7 +31,9 @@
         <StaticResource ResourceKey="ButtonHover" />
     </Window.BorderBrush>
 
-    <Grid>
+    <StackPanel 
+        Orientation="Horizontal" 
+        >
 
         <Label x:Name="drag" 
                 ToolTip="{StaticResource DragThisWindow}"
@@ -48,7 +50,6 @@
         <ComboBox HorizontalAlignment="Left" 
                   ToolTip="{StaticResource SelectWindow}"
                   VerticalAlignment="Top" 
-                  Margin="30,0,0,-1" 
                   Width="320"
                   Height="50" 
                   BorderThickness="0" 
@@ -68,7 +69,6 @@
                 ToolTip="{StaticResource EnterPiPMode}"
                 HorizontalAlignment="Left" 
                 VerticalAlignment="Top" 
-                Margin="350,0,0,0" 
                 Width="50" 
                 Height="50" 
                 FontSize="14"
@@ -82,7 +82,6 @@
                 ToolTip="{StaticResource Quit}"
                 HorizontalAlignment="Left" 
                 VerticalAlignment="Top" 
-                Margin="400,0,0,0" 
                 Width="50" 
                 Height="50" 
                 FontSize="14"
@@ -92,5 +91,5 @@
                 BorderThickness="0" 
                 FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF102;" Foreground="White" />
 
-    </Grid>
+    </StackPanel>
 </Window>

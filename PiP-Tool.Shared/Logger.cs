@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using log4net;
 using log4net.Config;
 
@@ -23,6 +24,7 @@ namespace PiP_Tool.Shared
         private Logger()
         {
             GlobalContext.Properties["LogFileName"] = Constants.LogPath;
+            Console.WriteLine("Logging to: " + Constants.LogPath);
             XmlConfigurator.Configure();
         }
 
