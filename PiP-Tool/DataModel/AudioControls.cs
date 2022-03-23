@@ -97,18 +97,18 @@ namespace PiP_Tool.Classes
 
             if (audioControls0.Count == 0)
             {
-                Logger.Instance.Info("Found no audio control");
+                Logger.Instance.Debug("Found no audio control");
                 DisposeControls();
                 return;
             }
 
             /*
             if (audioControls0.Count == 0) {
-                Logger.Instance.Info("Getting controls by root");
+                Logger.Instance.Debug("Getting controls by root");
                 audioControls0 = GetControls(dataFlow, x => (
                     new ProcessInfo(x.ProcessID).GetRootProcess().ProcessId == this.selectedWindow.GetRootProcess().ProcessId
                 ));
-                Logger.Instance.Info("Getting controls by root done");
+                Logger.Instance.Debug("Getting controls by root done");
             }
             */
 
@@ -125,12 +125,12 @@ namespace PiP_Tool.Classes
             /*
             if (audioControls2.Count == 0)
             {
-                Logger.Instance.Info("Filtering controls by root");
+                Logger.Instance.Debug("Filtering controls by root");
                 audioControls2 = audioControls0.Where(x => (
                     x.Process.Program == this.selectedWindow.Program
                     && x.Process.GetRootProcess().ProcessId == this.selectedWindow.GetRootProcess().ProcessId
                 )).ToList();
-                Logger.Instance.Info("Filtering controls by root done");
+                Logger.Instance.Debug("Filtering controls by root done");
             }
             */
             if (audioControls2.Count == 0) { 
@@ -141,27 +141,27 @@ namespace PiP_Tool.Classes
             /*
             if (audioControls2.Count == 0)
             {
-                Logger.Instance.Info("Filtering controls by root2");
+                Logger.Instance.Debug("Filtering controls by root2");
                 audioControls2 = audioControls0.Where(x => (
                     x.Process.GetRootProcess().ProcessId == this.selectedWindow.GetRootProcess().ProcessId
                 )).ToList();
-                Logger.Instance.Info("Filtering controls by root2 done");
+                Logger.Instance.Debug("Filtering controls by root2 done");
             }
             */
 
             if (audioControls2.Count == 0)
             {
-                Logger.Instance.Info("Found no audio control");
+                Logger.Instance.Debug("Found no audio control");
                 DisposeControls();
                 return;
             }
             DisposeControls();
             this.audioControls = audioControls2.ToArray();
-            Logger.Instance.Info("Found " + audioControls.Length + " audio controls");
+            Logger.Instance.Debug("Found " + audioControls.Length + " audio controls");
             foreach(AudioControl control in this.audioControls)
             {
                 control.RegisterAudioSessionNotification(sessionEvents);
-                Logger.Instance.Info("AudioController " + control.Process.Program + " " + control.Process.Title);
+                Logger.Instance.Debug("AudioController " + control.Process.Program + " " + control.Process.Title);
             }
         }
         internal void SetAllMasterVolume(float volume)
@@ -170,7 +170,7 @@ namespace PiP_Tool.Classes
             {
                 if (control.MasterVolume != volume) {
                     control.MasterVolume = volume;
-                    Logger.Instance.Info("Notified mixer changed to " + control.MasterVolume);
+                    Logger.Instance.Debug("Notified mixer changed to " + control.MasterVolume);
                 }
             }
         }

@@ -41,7 +41,7 @@ namespace PiP_Tool.ViewModels
         /// </summary>
         public VolumeViewModel()
         {
-            Logger.Instance.Info("   ====== VolumeDialog ======   ");
+            Logger.Instance.Debug("   ====== VolumeDialog ======   ");
 
             MessengerInstance.Register<AudioControls>(this, InitAudioControls);
             LoadedCommand = new RelayCommand(LoadedCommandExecute);
@@ -81,7 +81,7 @@ namespace PiP_Tool.ViewModels
             this.audioControls = audioControls;
             MessengerInstance.Unregister<AudioControls>(this);
 
-            Logger.Instance.Info("Init Volume : " + audioControls.SelectedWindow.Title);
+            Logger.Instance.Debug("Init Volume : " + audioControls.SelectedWindow.Title);
             this.audioControls.SessionEvents.SimpleVolumeChanged += OnMixerChanged;
             this.Volume = this.audioControls.MasterVolume;
             //this.SetSliderValue(this.audioControls.MasterVolume);
@@ -108,7 +108,7 @@ namespace PiP_Tool.ViewModels
 
         private void SetMixerVolume(float volume)
         {
-            Logger.Instance.Info("Setting master volume to " + volume);
+            Logger.Instance.Debug("Setting master volume to " + volume);
             this.audioControls.SetAllMasterVolume(volume);
         }
 
@@ -133,14 +133,14 @@ namespace PiP_Tool.ViewModels
 
         private void OnMixerChanged(object sender, AudioSessionSimpleVolumeChangedEventArgs e)
         {
-            Logger.Instance.Info("Notified mixer changed to " + e.NewVolume);
+            Logger.Instance.Debug("Notified mixer changed to " + e.NewVolume);
             SetSliderValue(e.NewVolume);
         }
 
         public void OnSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var value = e.NewValue;
-            Logger.Instance.Info("Slider changed to " + value);
+            Logger.Instance.Debug("Slider changed to " + value);
             if (volume != value)
                 volume = value;
             SetMixerVolume(value);

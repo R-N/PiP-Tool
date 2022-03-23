@@ -154,7 +154,7 @@ namespace PiP_Tool.DataModel
                 
             }
             this.parentProcessId = parentProcessId;
-            Logger.Instance.Info("Child-Parent: " + this.ProcessId + " " + this.ParentProcessId);
+            Logger.Instance.Debug("Child-Parent: " + this.ProcessId + " " + this.ParentProcessId);
             return ParentProcessId;
         }
         internal int GetParentProcessId1()
