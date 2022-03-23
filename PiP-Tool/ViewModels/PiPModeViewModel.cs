@@ -281,11 +281,12 @@ namespace PiP_Tool.ViewModels
         {
             if (_thumbHandle == IntPtr.Zero)
                 return;
-
+            
             var dest = new NativeStructs.Rect(0, _heightOffset, (int)(_width * _dpiX), (int)(_height * _dpiY));
             var rcSource = _selectedWindow.SelectedRegion;
             rcSource = new NativeStructs.Rect(rcSource);
-            rcSource.Top = rcSource.Top + _heightOffset;
+            var ratio = (rcSource.Bottom - rcSource.Top) / (float)_height / _dpiY;
+            rcSource.Top = rcSource.Top + (int)(_heightOffset * ratio);
             var props = new NativeStructs.DwmThumbnailProperties
             {
                 fVisible = true,
