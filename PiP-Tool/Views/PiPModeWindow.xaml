@@ -55,6 +55,16 @@
             HorizontalAlignment="Right"
          >
             <Button HorizontalAlignment="Left" 
+                    x:Name="SwitchToSelectedWindowButton" 
+                    ToolTip="{StaticResource SwitchToSelectedWindow}"
+                    VerticalAlignment="Top" 
+                    Command="{Binding SwitchToSelectedWindowCommand}" 
+                    Height="30" 
+                    Width="30" 
+                    BorderBrush="#FF7C7C7C"
+                    Opacity="0.5"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128468;" Foreground="White" />
+            <Button HorizontalAlignment="Left" 
                     x:Name="VolumeButton" 
                     ToolTip="{StaticResource SetVolume}"
                     VerticalAlignment="Top" 

@@ -58,6 +58,7 @@ namespace PiP_Tool.ViewModels
         public ICommand ClosingCommand { get; }
         public ICommand ChangeSelectedWindowCommand { get; }
         public ICommand SetVolumeCommand { get; }
+        public ICommand SwitchToSelectedWindowCommand { get; }
         public ICommand MouseEnterCommand { get; }
         public ICommand MouseLeaveCommand { get; }
         public ICommand DpiChangedCommand { get; }
@@ -203,6 +204,7 @@ namespace PiP_Tool.ViewModels
             ClosingCommand = new RelayCommand(ClosingCommandExecute);
             ChangeSelectedWindowCommand = new RelayCommand(ChangeSelectedWindowCommandExecute);
             SetVolumeCommand = new RelayCommand<object>(SetVolumeCommandExecute);
+            SwitchToSelectedWindowCommand = new RelayCommand(SwitchToSelectedWindowCommandExecute);
             MouseEnterCommand = new RelayCommand<MouseEventArgs>(MouseEnterCommandExecute);
             MouseLeaveCommand = new RelayCommand<MouseEventArgs>(MouseLeaveCommandExecute);
             DpiChangedCommand = new RelayCommand(DpiChangedCommandExecute);
@@ -505,6 +507,27 @@ namespace PiP_Tool.ViewModels
             }
             else
                 return window.Top;
+        }
+
+
+        /// <summary>
+        /// Executed on click on set volume button. Opens <see cref="VolumeDialog"/>
+        /// </summary>
+        private void SwitchToSelectedWindowCommandExecute()
+        {
+            var thisWindow = ThisWindow();
+            var selectedHandle = this._selectedWindow.WindowInfo.Handle;
+
+            NativeMethods.ShowWindow(
+                selectedHandle,
+                NativeMethods.IsZoomed(selectedHandle) ? ShowWindowCommands.ShowMaximized : ShowWindowCommands.Restore
+            );
+            NativeMethods.SetForegroundWindow(selectedHandle);
+            NativeMethods.SetActiveWindow(selectedHandle);
+            NativeMethods.BringWindowToTop(selectedHandle);
+            NativeMethods.SetFocus(selectedHandle);
+            NativeMethods.SwitchToThisWindow(selectedHandle, true);
+            SystemCommands.MinimizeWindow(thisWindow);
         }
 
         /// <summary>
