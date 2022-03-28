@@ -208,6 +208,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Controls\Snap.cs" />
     <Compile Include="DataModel\AudioControl.cs" />
     <Compile Include="DataModel\AudioControls.cs" />
     <Compile Include="Controls\MoveThumb.cs" />

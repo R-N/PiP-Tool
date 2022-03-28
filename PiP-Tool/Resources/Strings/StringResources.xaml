@@ -9,4 +9,5 @@
     <system:String x:Key="SetVolume">Adjust volume</system:String>
     <system:String x:Key="SwitchToSelectedWindow">Switch to selected window and minimize PiP</system:String>
     <system:String x:Key="SetOpacity">Adjust PiP window opacity</system:String>
+    <system:String x:Key="Minimize">Minimize this PiP window</system:String>
 </ResourceDictionary>

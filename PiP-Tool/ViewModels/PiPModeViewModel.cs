@@ -83,8 +83,11 @@ namespace PiP_Tool.ViewModels
         public ICommand ChangeSelectedWindowCommand { get; }
         public ICommand SetVolumeCommand { get; }
         public ICommand SwitchToSelectedWindowCommand { get; }
+        public ICommand MinimizeCommand { get; }
         public ICommand SetOpacityCommand { get; }
         public ICommand MouseEnterCommand { get; }
+        public ICommand MouseDownCommand { get; }
+        public ICommand MouseUpCommand { get; }
         public ICommand MouseLeaveCommand { get; }
         public ICommand DpiChangedCommand { get; }
 
@@ -231,8 +234,11 @@ namespace PiP_Tool.ViewModels
             ChangeSelectedWindowCommand = new RelayCommand(ChangeSelectedWindowCommandExecute);
             SetVolumeCommand = new RelayCommand<object>(SetVolumeCommandExecute);
             SwitchToSelectedWindowCommand = new RelayCommand(SwitchToSelectedWindowCommandExecute);
+            MinimizeCommand = new RelayCommand(MinimizeCommandExecute);
             SetOpacityCommand = new RelayCommand<object>(SetOpacityCommandExecute);
             MouseEnterCommand = new RelayCommand<MouseEventArgs>(MouseEnterCommandExecute);
+            MouseDownCommand = new RelayCommand<MouseEventArgs>(MouseDownCommandExecute);
+            MouseUpCommand = new RelayCommand<MouseEventArgs>(MouseUpCommandExecute);
             MouseLeaveCommand = new RelayCommand<MouseEventArgs>(MouseLeaveCommandExecute);
             DpiChangedCommand = new RelayCommand(DpiChangedCommandExecute);
 
@@ -447,7 +453,13 @@ namespace PiP_Tool.ViewModels
         /// <returns>The appropriate return value depends on the particular message. See the message documentation details for the Win32 message being handled.</returns>
         private IntPtr DragHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
         {
-            if ((WM)msg != WM.WINDOWPOSCHANGING)
+            var msg2 = (WM)msg;
+            if (msg2 == WM.LBUTTONDOWN)
+                SetNoResize();
+            else if (msg2 == WM.LBUTTONUP)
+                SetResizeGrip();
+            
+            if (msg2 != WM.WINDOWPOSCHANGING)
                 return IntPtr.Zero;
 
             if (_renderSizeEventDisabled)
@@ -549,7 +561,7 @@ namespace PiP_Tool.ViewModels
 
 
         /// <summary>
-        /// Executed on click on set volume button. Opens <see cref="VolumeDialog"/>
+        /// Executed on click on switch to button. />
         /// </summary>
         private void SwitchToSelectedWindowCommandExecute()
         {
@@ -565,6 +577,15 @@ namespace PiP_Tool.ViewModels
             NativeMethods.BringWindowToTop(selectedHandle);
             NativeMethods.SetFocus(selectedHandle);
             NativeMethods.SwitchToThisWindow(selectedHandle, true);
+            SystemCommands.MinimizeWindow(thisWindow);
+        }
+
+        /// <summary>
+        /// Executed on click on minimize button. />
+        /// </summary>
+        private void MinimizeCommandExecute()
+        {
+            var thisWindow = ThisWindow();
             SystemCommands.MinimizeWindow(thisWindow);
         }
 
@@ -655,6 +676,59 @@ namespace PiP_Tool.ViewModels
             MinHeight = MinHeight + topBarHeight;
             _renderSizeEventDisabled = false;
             e.Handled = true;
+        }
+
+        /// <summary>
+        /// Executed on mouse down. Disable Resize
+        /// </summary>
+        /// <param name="e">Event arguments</param>
+        private void MouseDownCommandExecute(MouseEventArgs e)
+        {
+            Logger.Instance.Debug("Mousedown");
+            if (
+                e.LeftButton == MouseButtonState.Pressed
+                || System.Windows.Input.Mouse.LeftButton == MouseButtonState.Pressed
+            )
+            {
+                Logger.Instance.Debug("Left mouse pressed");
+                SetNoResize();
+            }
+            e.Handled = true;
+        }
+
+        private void SetNoResize()
+        {
+            var thisWindow = ThisWindow();
+            // this prevents win7 aerosnap
+            if (thisWindow.ResizeMode != System.Windows.ResizeMode.NoResize)
+            {
+                Logger.Instance.Debug("Set no resize");
+                thisWindow.ResizeMode = System.Windows.ResizeMode.NoResize;
+                thisWindow.UpdateLayout();
+            }
+
+        }
+
+        /// <summary>
+        /// Executed on mouse up. Enable Resize
+        /// </summary>
+        /// <param name="e">Event arguments</param>
+        private void MouseUpCommandExecute(MouseEventArgs e)
+        {
+            SetResizeGrip();
+            e.Handled = true;
+        }
+
+        private void SetResizeGrip()
+        {
+
+            var thisWindow = ThisWindow();
+            if (thisWindow.ResizeMode == System.Windows.ResizeMode.NoResize)
+            {
+                // restore resize grips
+                thisWindow.ResizeMode = System.Windows.ResizeMode.CanResizeWithGrip;
+                thisWindow.UpdateLayout();
+            }
         }
 
         /// <summary>

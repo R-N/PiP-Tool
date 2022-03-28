@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:PiP_Tool.ViewModels"
+        xmlns:controls="clr-namespace:PiP_Tool.Controls"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:command="http://www.galasoft.ch/mvvmlight"
         mc:Ignorable="d"
@@ -36,6 +37,12 @@
         <i:EventTrigger EventName="MouseEnter">
             <command:EventToCommand Command="{Binding MouseEnterCommand}" PassEventArgsToCommand="True" />
         </i:EventTrigger>
+        <i:EventTrigger EventName="MouseDown">
+            <command:EventToCommand Command="{Binding MouseDownCommand}" PassEventArgsToCommand="True" />
+        </i:EventTrigger>
+        <i:EventTrigger EventName="MouseUp">
+            <command:EventToCommand Command="{Binding MouseUpCommand}" PassEventArgsToCommand="True" />
+        </i:EventTrigger>
         <i:EventTrigger EventName="MouseLeave">
             <command:EventToCommand Command="{Binding MouseLeaveCommand}" PassEventArgsToCommand="True" />
         </i:EventTrigger>
@@ -64,26 +71,14 @@
             HorizontalAlignment="Right"
          >
             <Button HorizontalAlignment="Left" 
-                    x:Name="OpacityButton" 
-                    ToolTip="{StaticResource SetOpacity}"
+                    ToolTip="{StaticResource SelectNewWindow}"
                     VerticalAlignment="Top" 
-                    Command="{Binding SetOpacityCommand}" 
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                    Command="{Binding ChangeSelectedWindowCommand}" 
                     Height="30" 
                     Width="30" 
                     BorderBrush="#FF7C7C7C"
                     Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128065;" Foreground="White" />
-            <Button HorizontalAlignment="Left" 
-                    x:Name="SwitchToSelectedWindowButton" 
-                    ToolTip="{StaticResource SwitchToSelectedWindow}"
-                    VerticalAlignment="Top" 
-                    Command="{Binding SwitchToSelectedWindowCommand}" 
-                    Height="30" 
-                    Width="30" 
-                    BorderBrush="#FF7C7C7C"
-                    Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128468;" Foreground="White" />
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF103;" Foreground="White" />
             <Button HorizontalAlignment="Left" 
                     x:Name="VolumeButton" 
                     ToolTip="{StaticResource SetVolume}"
@@ -96,14 +91,36 @@
                     Opacity="0.5"
                     FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#x1F50A;" Foreground="White" />
             <Button HorizontalAlignment="Left" 
-                    ToolTip="{StaticResource SelectNewWindow}"
+                    x:Name="OpacityButton" 
+                    ToolTip="{StaticResource SetOpacity}"
                     VerticalAlignment="Top" 
-                    Command="{Binding ChangeSelectedWindowCommand}" 
+                    Command="{Binding SetOpacityCommand}" 
+                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
                     Height="30" 
                     Width="30" 
                     BorderBrush="#FF7C7C7C"
                     Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF103;" Foreground="White" />
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128065;" Foreground="White" />
+            <Button HorizontalAlignment="Left" 
+                    x:Name="MinimizeButton" 
+                    ToolTip="{StaticResource Minimize}"
+                    VerticalAlignment="Top" 
+                    Command="{Binding MinimizeCommand}" 
+                    Height="30" 
+                    Width="30" 
+                    BorderBrush="#FF7C7C7C"
+                    Opacity="0.5"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128469;" Foreground="White" />
+            <Button HorizontalAlignment="Left" 
+                    x:Name="SwitchToSelectedWindowButton" 
+                    ToolTip="{StaticResource SwitchToSelectedWindow}"
+                    VerticalAlignment="Top" 
+                    Command="{Binding SwitchToSelectedWindowCommand}" 
+                    Height="30" 
+                    Width="30" 
+                    BorderBrush="#FF7C7C7C"
+                    Opacity="0.5"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128468;" Foreground="White" />
             <Button HorizontalAlignment="Left" 
                     ToolTip="{StaticResource Quit}"
                     VerticalAlignment="Top" 
