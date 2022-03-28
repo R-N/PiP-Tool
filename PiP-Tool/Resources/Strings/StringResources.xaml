@@ -10,4 +10,5 @@
     <system:String x:Key="SwitchToSelectedWindow">Switch to selected window and minimize PiP</system:String>
     <system:String x:Key="SetOpacity">Adjust PiP window opacity</system:String>
     <system:String x:Key="Minimize">Minimize this PiP window</system:String>
+    <system:String x:Key="ForwardInputs">Enable to forward all inputs to the selected window</system:String>
 </ResourceDictionary>

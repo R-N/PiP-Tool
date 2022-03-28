@@ -80,6 +80,15 @@
                     Opacity="0.5"
                     FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF103;" Foreground="White" />
             <Button HorizontalAlignment="Left" 
+                    ToolTip="{StaticResource ForwardInputs}"
+                    VerticalAlignment="Top" 
+                    Command="{Binding ForwardInputsCommand}" 
+                    Height="30" 
+                    Width="30" 
+                    BorderBrush="#FF7C7C7C"
+                    Opacity="0.5"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128377;" Foreground="White" />
+            <Button HorizontalAlignment="Left" 
                     x:Name="VolumeButton" 
                     ToolTip="{StaticResource SetVolume}"
                     VerticalAlignment="Top" 

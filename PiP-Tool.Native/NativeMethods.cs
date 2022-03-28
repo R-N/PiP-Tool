@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 using static PiP_Tool.Native.NativeStructs;
@@ -121,13 +120,64 @@ namespace PiP_Tool.Native
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
-
-        [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
-        public static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, ref Point pptDst, ref Size psize, IntPtr hdcSrc, ref Point pprSrc, Int32 crKey, ref BLENDFUNCTION pblend, Int32 dwFlags);
-
-
         [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
         public static extern IntPtr GetDC(IntPtr hWnd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, uint wParam, long lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, uint wParam, int lParam);
+
+
+        public static uint CoordToLParam(short x, short y)
+        {
+            return (uint)((y << 16) | (x & 0xffff));
+        }
+        public static ulong CoordToLParam(int x, int y)
+        {
+            return (uint)((y << 32) | (x & 0xffffffff));
+        }
+        public static short LParamToX(int lparam)
+        {
+            return (short)(lparam & 0xffff);
+        }
+
+        public static short LParamToY(int lparam)
+        {
+            return (short)((lparam >> 16) & 0xffff);
+        }
+        public static int LParamToX(long lparam)
+        {
+            return (int)(lparam & 0xffffffff);
+        }
+
+        public static int LParamToY(long lparam)
+        {
+            return (int)((lparam >> 32) & 0xffffffff);
+        }
+        public static short LParamToX(uint lparam)
+        {
+            return (short)(lparam & 0xffff);
+        }
+
+        public static short LParamToY(uint lparam)
+        {
+            return (short)((lparam >> 16) & 0xffff);
+        }
+        public static int LParamToX(ulong lparam)
+        {
+            return (int)(lparam & 0xffffffff);
+        }
+
+        public static int LParamToY(ulong lparam)
+        {
+            return (int)((lparam >> 32) & 0xffffffff);
+        }
+
 
         #endregion
 

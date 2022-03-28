@@ -46,6 +46,7 @@ namespace PiP_Tool.Native
             public int y;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         public struct POINT
         {
             public int X;

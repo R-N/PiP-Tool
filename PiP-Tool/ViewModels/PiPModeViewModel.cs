@@ -75,6 +75,8 @@ namespace PiP_Tool.ViewModels
             }
         }
 
+        private bool forwardInputs = false;
+
         public event EventHandler<EventArgs> RequestClose;
 
         public ICommand LoadedCommand { get; }
@@ -89,6 +91,7 @@ namespace PiP_Tool.ViewModels
         public ICommand MouseDownCommand { get; }
         public ICommand MouseUpCommand { get; }
         public ICommand MouseLeaveCommand { get; }
+        public ICommand ForwardInputsCommand { get; }
         public ICommand DpiChangedCommand { get; }
 
         /// <summary>
@@ -240,6 +243,7 @@ namespace PiP_Tool.ViewModels
             MouseDownCommand = new RelayCommand<MouseEventArgs>(MouseDownCommandExecute);
             MouseUpCommand = new RelayCommand<MouseEventArgs>(MouseUpCommandExecute);
             MouseLeaveCommand = new RelayCommand<MouseEventArgs>(MouseLeaveCommandExecute);
+            ForwardInputsCommand = new RelayCommand(ForwardInputsCommandExecute);
             DpiChangedCommand = new RelayCommand(DpiChangedCommandExecute);
 
             MessengerInstance.Register<SelectedWindow>(this, InitSelectedWindow);
@@ -320,6 +324,11 @@ namespace PiP_Tool.ViewModels
             return x / 255.0;
         }
 
+        private NativeStructs.Rect DestRect()
+        {
+            return new NativeStructs.Rect(0, 0, (int)(_width * _dpiX), (int)(_height * _dpiY));
+        }
+
         /// <summary>
         /// Update dwm thumbnail properties
         /// </summary>
@@ -328,11 +337,12 @@ namespace PiP_Tool.ViewModels
             if (_thumbHandle == IntPtr.Zero)
                 return;
             
-            var dest = new NativeStructs.Rect(0, _heightOffset, (int)(_width * _dpiX), (int)(_height * _dpiY));
+            var dest = this.DestRect();
+            dest.Top += _heightOffset;
             var rcSource = _selectedWindow.SelectedRegion;
             rcSource = new NativeStructs.Rect(rcSource);
-            var ratio = (rcSource.Bottom - rcSource.Top) / (float)_height / _dpiY;
-            rcSource.Top = rcSource.Top + (int)(_heightOffset * ratio);
+            var ratio = rcSource.Height / (float)_height / _dpiY;
+            rcSource.Top += (int)(_heightOffset * ratio);
             var props = new NativeStructs.DwmThumbnailProperties
             {
                 fVisible = true,
@@ -451,17 +461,116 @@ namespace PiP_Tool.ViewModels
         /// <param name="lParam">The message's lParam value.</param>
         /// <param name="handeled">A value that indicates whether the message was handled. Set the value to true if the message was handled; otherwise, false.</param>
         /// <returns>The appropriate return value depends on the particular message. See the message documentation details for the Win32 message being handled.</returns>
-        private IntPtr DragHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
+        private IntPtr EventHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
         {
             var msg2 = (WM)msg;
+
+            if (this.forwardInputs)
+            {
+                ForwardInputs(msg, wParam, lParam, ref handeled);
+                if (handeled)
+                    return IntPtr.Zero;
+            }
+
             if (msg2 == WM.LBUTTONDOWN)
                 SetNoResize();
             else if (msg2 == WM.LBUTTONUP)
                 SetResizeGrip();
-            
-            if (msg2 != WM.WINDOWPOSCHANGING)
-                return IntPtr.Zero;
 
+            if (msg2 == WM.WINDOWPOSCHANGING)
+                return DragMove(hwnd, lParam, ref handeled);
+
+
+            return IntPtr.Zero;
+        }
+
+        private IntPtr ForwardInputs(int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
+        {
+            var msg2 = (WM)msg;
+            switch (msg2)
+            {
+                case WM.KEYDOWN:
+                case WM.KEYUP:
+                case WM.IME_KEYDOWN:
+                case WM.IME_KEYUP:
+                case WM.SYSKEYDOWN:
+                case WM.SYSKEYUP:
+                case WM.HOTKEY:
+                case WM.MOUSEACTIVATE:
+                case WM.MOUSELEAVE:
+                case WM.NCMOUSELEAVE:
+                case WM.HSCROLL:
+                case WM.VSCROLL:
+                    //Logger.Instance.Debug("Sending key " + msg2);
+                    NativeMethods.SendMessage(
+                        this._selectedWindow.WindowInfo.Handle,
+                        (uint)msg,
+                        wParam,
+                        lParam
+                    );
+                    handeled = true;
+                    break;
+                case WM.MOUSEHOVER:
+                case WM.MOUSEMOVE:
+                case WM.MOUSEWHEEL:
+                case WM.MOUSEHWHEEL:
+                case WM.LBUTTONDOWN:
+                case WM.LBUTTONUP:
+                case WM.MBUTTONDOWN:
+                case WM.MBUTTONUP:
+                case WM.RBUTTONDOWN:
+                case WM.RBUTTONUP:
+                case WM.XBUTTONDOWN:
+                case WM.XBUTTONUP:
+                case WM.LBUTTONDBLCLK:
+                case WM.MBUTTONDBLCLK:
+                case WM.RBUTTONDBLCLK:
+                case WM.XBUTTONDBLCLK:
+                case WM.NCMOUSEHOVER:
+                case WM.NCMOUSEMOVE:
+                case WM.NCLBUTTONDOWN:
+                case WM.NCLBUTTONUP:
+                case WM.NCMBUTTONDOWN:
+                case WM.NCMBUTTONUP:
+                case WM.NCRBUTTONDOWN:
+                case WM.NCRBUTTONUP:
+                case WM.NCXBUTTONDOWN:
+                case WM.NCXBUTTONUP:
+                case WM.NCLBUTTONDBLCLK:
+                case WM.NCMBUTTONDBLCLK:
+                case WM.NCRBUTTONDBLCLK:
+                case WM.NCXBUTTONDBLCLK:
+                    try { 
+                        var x = NativeMethods.LParamToX((uint)lParam);
+                        var y = NativeMethods.LParamToY((uint)lParam);
+                        var selectedRect = this._selectedWindow.SelectedRegion;
+                        var thisRect = this.DestRect();
+                        if (y <= TopBarHeight)
+                            break;
+                        x = (short)((double)x * selectedRect.Width / thisRect.Width);
+                        y = (short)((double)y * selectedRect.Height / thisRect.Height);
+                        //Logger.Instance.Debug("Sending click " + msg2 + " at " + x + ", " + y);
+                        var lParam2 = NativeMethods.CoordToLParam(x, y);
+                        NativeMethods.SendMessage(
+                            this._selectedWindow.WindowInfo.Handle,
+                            (uint)msg,
+                            wParam,
+                            (IntPtr)lParam2
+                        );
+                        handeled = true;
+                    }
+                    catch (System.OverflowException ex)
+                    {
+
+                    }
+                    break;
+            }
+
+            return IntPtr.Zero;
+        }
+
+        private IntPtr DragMove(IntPtr hwnd, IntPtr lParam, ref bool handeled)
+        {
             if (_renderSizeEventDisabled)
                 return IntPtr.Zero;
 
@@ -470,7 +579,7 @@ namespace PiP_Tool.ViewModels
                 HwndSource.FromHwnd(hwnd)?.RootVisual == null) return IntPtr.Zero;
 
             var topBarHeight = 0;
-            
+
             /*
             if (TopBarIsVisible)
                 topBarHeight = TopBarHeight;
@@ -480,7 +589,6 @@ namespace PiP_Tool.ViewModels
 
             Marshal.StructureToPtr(position, lParam, true);
             handeled = true;
-
             return IntPtr.Zero;
         }
 
@@ -491,7 +599,7 @@ namespace PiP_Tool.ViewModels
         public void Dispose()
         {
             _mlSource?.Cancel();
-            ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.RemoveHook(DragHook);
+            ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.RemoveHook(EventHook);
         }
 
         #region commands
@@ -501,7 +609,7 @@ namespace PiP_Tool.ViewModels
         /// </summary>
         private void LoadedCommandExecute()
         {
-            ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.AddHook(DragHook);
+            ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.AddHook(EventHook);
             var windowsList = Application.Current.Windows.Cast<Window>();
             var thisWindow = windowsList.FirstOrDefault(x => x.DataContext == this);
             if (thisWindow != null)
@@ -755,6 +863,14 @@ namespace PiP_Tool.ViewModels
             Height = Height - topBarHeight;
             _renderSizeEventDisabled = false;
             e.Handled = true;
+        }
+
+        /// <summary>
+        /// Executed on click forward input button.
+        /// </summary>
+        private void ForwardInputsCommandExecute()
+        {
+            this.forwardInputs = !this.forwardInputs;
         }
 
         /// <summary>
