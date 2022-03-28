@@ -51,6 +51,30 @@ namespace PiP_Tool.ViewModels
         public const float DefaultPositionPercentage = 0.1f;
         public const int TopBarHeight = 30;
 
+        private double opacity = 1;
+        public double Opacity
+        {
+            get => opacity;
+            set
+            {
+                opacity = value;
+                RaisePropertyChanged();
+                this.BackgroundOpacity = opacity < 1 ? 0 : 1;
+                UpdateDwmThumbnail();
+            }
+        }
+
+        private double backgroundOpacity = 1;
+        public double BackgroundOpacity
+        {
+            get => backgroundOpacity;
+            set
+            {
+                backgroundOpacity = value;
+                RaisePropertyChanged();
+            }
+        }
+
         public event EventHandler<EventArgs> RequestClose;
 
         public ICommand LoadedCommand { get; }
@@ -59,6 +83,7 @@ namespace PiP_Tool.ViewModels
         public ICommand ChangeSelectedWindowCommand { get; }
         public ICommand SetVolumeCommand { get; }
         public ICommand SwitchToSelectedWindowCommand { get; }
+        public ICommand SetOpacityCommand { get; }
         public ICommand MouseEnterCommand { get; }
         public ICommand MouseLeaveCommand { get; }
         public ICommand DpiChangedCommand { get; }
@@ -188,6 +213,7 @@ namespace PiP_Tool.ViewModels
         private CancellationTokenSource _mlSource;
         private CancellationToken _mlToken;
         private VolumeDialog volumeDialog = null;
+        private OpacityDialog opacityDialog = null;
 
         #endregion
 
@@ -205,6 +231,7 @@ namespace PiP_Tool.ViewModels
             ChangeSelectedWindowCommand = new RelayCommand(ChangeSelectedWindowCommandExecute);
             SetVolumeCommand = new RelayCommand<object>(SetVolumeCommandExecute);
             SwitchToSelectedWindowCommand = new RelayCommand(SwitchToSelectedWindowCommandExecute);
+            SetOpacityCommand = new RelayCommand<object>(SetOpacityCommandExecute);
             MouseEnterCommand = new RelayCommand<MouseEventArgs>(MouseEnterCommandExecute);
             MouseLeaveCommand = new RelayCommand<MouseEventArgs>(MouseLeaveCommandExecute);
             DpiChangedCommand = new RelayCommand(DpiChangedCommandExecute);
@@ -276,6 +303,17 @@ namespace PiP_Tool.ViewModels
                 UpdateDwmThumbnail();
         }
 
+
+        private byte DoubleToByte(double x)
+        {
+            return (byte)(255 * x);
+        }
+
+        private double ByteToDouble(byte x)
+        {
+            return x / 255.0;
+        }
+
         /// <summary>
         /// Update dwm thumbnail properties
         /// </summary>
@@ -293,7 +331,7 @@ namespace PiP_Tool.ViewModels
             {
                 fVisible = true,
                 dwFlags = (int)(DWM_TNP.DWM_TNP_VISIBLE | DWM_TNP.DWM_TNP_RECTDESTINATION | DWM_TNP.DWM_TNP_OPACITY | DWM_TNP.DWM_TNP_RECTSOURCE),
-                opacity = 255,
+                opacity = DoubleToByte(this.Opacity),
                 rcDestination = dest,
                 rcSource = rcSource
             };
@@ -360,7 +398,7 @@ namespace PiP_Tool.ViewModels
         /// Gets this window
         /// </summary>
         /// <returns>This window</returns>
-        private Window ThisWindow()
+        public Window ThisWindow()
         {
             var windowsList = Application.Current.Windows.Cast<Window>();
             return windowsList.FirstOrDefault(window => window.DataContext == this);
@@ -537,15 +575,7 @@ namespace PiP_Tool.ViewModels
         {
             if (volumeDialog != null)
                 volumeDialog.Close();
-            var thisWindow = ThisWindow();
-            var volumeButton = (Button)button;
-            var buttonPosition = volumeButton.TransformToAncestor(thisWindow).Transform(new WPoint(0, 0));
-            
-            volumeDialog = new VolumeDialog();
-            volumeDialog.Owner = thisWindow;
-            volumeDialog.Top = thisWindow.Top + buttonPosition.Y + volumeButton.Height;
-            volumeDialog.Left = thisWindow.Left + buttonPosition.X;
-            volumeDialog.Closed += OnVolumeDialogClose;
+
 
             var selectedWindow = new ProcessInfo(this._selectedWindow.WindowInfo);
             var audioControls = new AudioControls(selectedWindow);
@@ -553,6 +583,14 @@ namespace PiP_Tool.ViewModels
             var task = Task.Run(() => {
                 audioControls.GetControls(DataFlow.Render);
             });
+
+            var thisWindow = ThisWindow();
+            var volumeButton = (Button)button;
+            
+            volumeDialog = new VolumeDialog();
+            InitButtonDialog(volumeDialog, volumeButton, thisWindow);
+            volumeDialog.Closed += OnVolumeDialogClose;
+
             task.Wait();
             if (!audioControls.HasControls)
             {
@@ -567,6 +605,37 @@ namespace PiP_Tool.ViewModels
         private void OnVolumeDialogClose(object source, System.EventArgs e)
         {
             volumeDialog = null;
+        }
+
+        private void InitButtonDialog(Window dialog, Button button, Window parent)
+        {
+            var buttonPosition = button.TransformToAncestor(parent).Transform(new WPoint(0, 0));
+            dialog.Owner = parent;
+            dialog.Top = parent.Top + buttonPosition.Y + button.Height;
+            dialog.Left = parent.Left + buttonPosition.X;
+        }
+
+        /// <summary>
+        /// Executed on click on set opacity button. Opens <see cref="OpacityDialog"/>
+        /// </summary>
+        private void SetOpacityCommandExecute(object button)
+        {
+            if (volumeDialog != null)
+                volumeDialog.Close();
+            var thisWindow = ThisWindow();
+            var opacityButton = (Button)button;
+
+            opacityDialog = new OpacityDialog();
+            InitButtonDialog(opacityDialog, opacityButton, thisWindow);
+            opacityDialog.Closed += OnOpacityDialogClose;
+
+            MessengerInstance.Send(new PiPWindowInfo(this));
+            opacityDialog.Show();
+        }
+
+        private void OnOpacityDialogClose(object source, System.EventArgs e)
+        {
+            opacityDialog = null;
         }
 
         /// <summary>

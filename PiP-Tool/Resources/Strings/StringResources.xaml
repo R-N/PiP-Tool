@@ -6,6 +6,7 @@
     <system:String x:Key="EnterPiPMode">Enter in PiP mode</system:String>
     <system:String x:Key="Quit">Quit</system:String>
     <system:String x:Key="SelectNewWindow">Select a new window</system:String>
-    <system:String x:Key="SetVolume">Adjust Volume</system:String>
-    <system:String x:Key="SwitchToSelectedWindow">Switch to selected window and minimize PiP"</system:String> 
+    <system:String x:Key="SetVolume">Adjust volume</system:String>
+    <system:String x:Key="SwitchToSelectedWindow">Switch to selected window and minimize PiP</system:String>
+    <system:String x:Key="SetOpacity">Adjust PiP window opacity</system:String>
 </ResourceDictionary>

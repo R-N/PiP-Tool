@@ -19,6 +19,7 @@
         WindowStyle="None" 
         x:Name="Window"
         Topmost="True"
+        Opacity="{Binding Opacity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
         WindowStartupLocation="Manual">
 
     <Window.DataContext>
@@ -44,16 +45,35 @@
     </i:Interaction.Triggers>
 
     <Window.Background>
-        <StaticResource ResourceKey="Background" />
+        <SolidColorBrush 
+            Color="#FF2D2D30"
+            Opacity="{Binding BackgroundOpacity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+         />
     </Window.Background>
 
-    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+    <Grid 
+        VerticalAlignment="Stretch" 
+        HorizontalAlignment="Stretch"
+        Background="{StaticResource Background}"
+        Opacity="1"
+    >
         <StackPanel 
             x:Name="TopBar" 
             Visibility="{Binding TopBarVisibility, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
             Orientation="Horizontal" 
             HorizontalAlignment="Right"
          >
+            <Button HorizontalAlignment="Left" 
+                    x:Name="OpacityButton" 
+                    ToolTip="{StaticResource SetOpacity}"
+                    VerticalAlignment="Top" 
+                    Command="{Binding SetOpacityCommand}" 
+                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                    Height="30" 
+                    Width="30" 
+                    BorderBrush="#FF7C7C7C"
+                    Opacity="0.5"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128065;" Foreground="White" />
             <Button HorizontalAlignment="Left" 
                     x:Name="SwitchToSelectedWindowButton" 
                     ToolTip="{StaticResource SwitchToSelectedWindow}"

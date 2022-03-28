@@ -17,7 +17,7 @@ namespace PiP_Tool.ViewModels
     {
         private AudioControls audioControls;
 
-        private double volume = 0;
+        private double volume = 1;
         public double Volume
         {
             get => volume;
@@ -53,8 +53,10 @@ namespace PiP_Tool.ViewModels
         /// </summary>
         private void LoadedCommandExecute()
         {
-            thisWindow = ThisWindow();
-            volumeSlider = (Slider)thisWindow.FindName("VolumeSlider");
+            this.thisWindow = ThisWindow();
+            this.volumeSlider = (Slider)thisWindow.FindName("VolumeSlider");
+
+            this.InitVolumeSlider();
         }
 
         /// <summary>
@@ -81,7 +83,14 @@ namespace PiP_Tool.ViewModels
             this.audioControls = audioControls;
             MessengerInstance.Unregister<AudioControls>(this);
 
-            Logger.Instance.Debug("Init Volume : " + audioControls.SelectedWindow.Title);
+            this.InitVolumeSlider();
+        }
+
+        private void InitVolumeSlider()
+        {
+            if (this.audioControls == null || this.volumeSlider == null)
+                return;
+            Logger.Instance.Debug("Init Volume Slider : " + audioControls.SelectedWindow.Title);
             this.audioControls.SessionEvents.SimpleVolumeChanged += OnMixerChanged;
             this.Volume = this.audioControls.MasterVolume;
             //this.SetSliderValue(this.audioControls.MasterVolume);
@@ -103,7 +112,7 @@ namespace PiP_Tool.ViewModels
         /// </summary>
         private void CloseCommandExecute()
         {
-            MessengerInstance.Unregister<SelectedWindow>(this);
+            MessengerInstance.Unregister<AudioControls>(this);
         }
 
         private void SetMixerVolume(float volume)

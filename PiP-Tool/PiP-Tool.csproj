@@ -212,11 +212,13 @@
     <Compile Include="DataModel\AudioControls.cs" />
     <Compile Include="Controls\MoveThumb.cs" />
     <Compile Include="Controls\ResizeThumb.cs" />
+    <Compile Include="DataModel\PiPWindowInfo.cs" />
     <Compile Include="DataModel\ProcessInfo.cs" />
     <Compile Include="Interfaces\ICloseable.cs" />
     <Compile Include="DataModel\SelectedWindow.cs" />
     <Compile Include="DataModel\WindowInfo.cs" />
     <Compile Include="Services\ProcessesService.cs" />
+    <Compile Include="ViewModels\OpacityViewModel.cs" />
     <Compile Include="ViewModels\VolumeViewModel.cs" />
     <Compile Include="Views\PiPModeWindow.xaml.cs">
       <DependentUpon>PiPModeWindow.xaml</DependentUpon>
@@ -227,6 +229,9 @@
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\PiPModeViewModel.cs" />
     <Compile Include="ViewModels\CropperViewModel.cs" />
+    <Compile Include="Views\OpacityDialog.xaml.cs">
+      <DependentUpon>OpacityDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\VolumeDialog.xaml.cs">
       <DependentUpon>VolumeDialog.xaml</DependentUpon>
     </Compile>
@@ -275,6 +280,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\CropperWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\OpacityDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
+using static PiP_Tool.Native.NativeStructs;
 
 namespace PiP_Tool.Native
 {
@@ -86,6 +88,46 @@ namespace PiP_Tool.Native
 
         [DllImport("user32.dll")]
         public static extern bool IsZoomed(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool GetLayeredWindowAttributes(IntPtr hwnd, out uint crKey, out byte bAlpha, out uint dwFlags);
+
+        // This helper static method is required because the 32-bit version of user32.dll does not contain this API
+        // (on any versions of Windows), so linking the method will fail at run-time. The bridge dispatches the request
+        // to the correct function (GetWindowLong in 32-bit mode and GetWindowLongPtr in 64-bit mode)
+        public static IntPtr SetWindowLongPtr(HandleRef hWnd, int nIndex, IntPtr dwNewLong)
+        {
+            if (IntPtr.Size == 8)
+                return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
+            else
+                return new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
+        }
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
+        public static extern int SetWindowLong32(HandleRef hWnd, int nIndex, int dwNewLong);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+        public static extern IntPtr SetWindowLongPtr64(HandleRef hWnd, int nIndex, IntPtr dwNewLong);
+        // If that doesn't work, the following signature can be used alternatively.
+        [DllImport("user32.dll")]
+        public static extern int SetWindowLong(IntPtr hWnd, int nIndex, uint dwNewLong);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLong")]
+        public static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+
+        [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
+        public static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, ref Point pptDst, ref Size psize, IntPtr hdcSrc, ref Point pprSrc, Int32 crKey, ref BLENDFUNCTION pblend, Int32 dwFlags);
+
+
+        [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
+        public static extern IntPtr GetDC(IntPtr hWnd);
 
         #endregion
 
