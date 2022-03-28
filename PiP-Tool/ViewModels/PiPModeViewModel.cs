@@ -51,7 +51,7 @@ namespace PiP_Tool.ViewModels
         public const int MinSize = 100;
         public const float DefaultSizePercentage = 0.25f;
         public const float DefaultPositionPercentage = 0.1f;
-        public const int TopBarHeight = 30;
+        public const int SideBarWidth = 30;
 
         private double opacity = 1;
         public double Opacity
@@ -61,8 +61,21 @@ namespace PiP_Tool.ViewModels
             {
                 opacity = value;
                 RaisePropertyChanged();
-                this.BackgroundOpacity = opacity < 1 ? 0 : 1;
+                var bc = new BrushConverter();
+                this.BackgroundBrush = (Brush)bc.ConvertFrom(this.opacity >= 1 ? "#FF2D2D30" : "#002D2D30");
+                this.BackgroundOpacity = opacity < 1 ? 0.01 : 1;
                 UpdateDwmThumbnail();
+            }
+        }
+
+        private Brush backgroundBrush = (Brush)(new BrushConverter()).ConvertFrom("#FF2D2D30");
+        public Brush BackgroundBrush
+        {
+            get => backgroundBrush;
+            set
+            {
+                backgroundBrush = value;
+                RaisePropertyChanged();
             }
         }
 
@@ -181,12 +194,12 @@ namespace PiP_Tool.ViewModels
         /// <summary>
         /// Gets or sets visibility of the topbar
         /// </summary>
-        public Visibility TopBarVisibility
+        public Visibility SideBarVisibility
         {
-            get => _topBarVisibility;
+            get => _sideBarVisibility;
             set
             {
-                _topBarVisibility = value;
+                _sideBarVisibility = value;
                 UpdateDwmThumbnail();
                 RaisePropertyChanged();
             }
@@ -194,7 +207,7 @@ namespace PiP_Tool.ViewModels
         /// <summary>
         /// Gets if topbar is visible
         /// </summary>
-        public bool TopBarIsVisible => TopBarVisibility == Visibility.Visible;
+        public bool SideBarIsVisible => SideBarVisibility == Visibility.Visible;
 
         #endregion
 
@@ -204,8 +217,8 @@ namespace PiP_Tool.ViewModels
 
         private float _dpiX = 1;
         private float _dpiY = 1;
-        private int _heightOffset;
-        private Visibility _topBarVisibility;
+        private int _widthOffset;
+        private Visibility _sideBarVisibility;
         private bool _renderSizeEventDisabled;
         private int _minHeight;
         private int _minWidth;
@@ -274,8 +287,8 @@ namespace PiP_Tool.ViewModels
 
             _selectedWindow = selectedWindow;
             _renderSizeEventDisabled = true;
-            TopBarVisibility = Visibility.Hidden;
-            _heightOffset = 0;
+            SideBarVisibility = Visibility.Hidden;
+            _widthOffset = 0;
             Ratio = _selectedWindow.Ratio;
 
             DpiChangedCommandExecute();
@@ -328,7 +341,7 @@ namespace PiP_Tool.ViewModels
 
         private NativeStructs.Rect DestRect()
         {
-            return new NativeStructs.Rect(0, 0, (int)(_width * _dpiX), (int)(_height * _dpiY));
+            return new NativeStructs.Rect(0, 0, (int)(_width * _dpiX) - _widthOffset, (int)(_height * _dpiY));
         }
 
         /// <summary>
@@ -340,11 +353,11 @@ namespace PiP_Tool.ViewModels
                 return;
             
             var dest = this.DestRect();
-            dest.Top += _heightOffset;
+            //dest.Right -= _widthOffset;
             var rcSource = _selectedWindow.SelectedRegion;
             rcSource = new NativeStructs.Rect(rcSource);
             var ratio = rcSource.Height / (float)_height / _dpiY;
-            rcSource.Top += (int)(_heightOffset * ratio);
+            //rcSource.Top += (int)(_heightOffset * ratio);
             var props = new NativeStructs.DwmThumbnailProperties
             {
                 fVisible = true,
@@ -503,7 +516,7 @@ namespace PiP_Tool.ViewModels
                 case WM.NCMOUSELEAVE:
                 case WM.HSCROLL:
                 case WM.VSCROLL:
-                    //Logger.Instance.Debug("Sending key " + msg2);
+                    Logger.Instance.Debug("Sending key " + msg2);
                     NativeMethods.SendMessage(
                         this._selectedWindow.WindowInfo.Handle,
                         (uint)msg,
@@ -547,8 +560,18 @@ namespace PiP_Tool.ViewModels
                         var y = NativeMethods.LParamToY((uint)lParam);
                         var selectedRect = this._selectedWindow.SelectedRegion;
                         var thisRect = this.DestRect();
-                        if (y <= TopBarHeight)
-                            break;
+                        switch (msg2)
+                        {
+                            case WM.MOUSEHOVER:
+                            case WM.MOUSEMOVE:
+                            case WM.MOUSEWHEEL:
+                            case WM.MOUSEHWHEEL:
+                                break;
+                            default:
+                                if (x >= thisRect.Width && x <= thisRect.Width + _widthOffset)
+                                    return IntPtr.Zero;
+                                break;
+                        }
                         x = (short)((double)x * selectedRect.Width / thisRect.Width);
                         y = (short)((double)y * selectedRect.Height / thisRect.Height);
                         //Logger.Instance.Debug("Sending click " + msg2 + " at " + x + ", " + y);
@@ -580,14 +603,15 @@ namespace PiP_Tool.ViewModels
             if ((position.flags & (int)SWP.NOMOVE) != 0 ||
                 HwndSource.FromHwnd(hwnd)?.RootVisual == null) return IntPtr.Zero;
 
-            var topBarHeight = 0;
 
             /*
+            var topBarHeight = 0;
             if (TopBarIsVisible)
                 topBarHeight = TopBarHeight;
-            */
-
             position.cx = (int)((position.cy - topBarHeight) * Ratio);
+            */
+            position.cx = (int)((position.cy) * Ratio);
+
 
             Marshal.StructureToPtr(position, lParam, true);
             handeled = true;
@@ -775,15 +799,15 @@ namespace PiP_Tool.ViewModels
         /// <param name="e">Event arguments</param>
         private void MouseEnterCommandExecute(MouseEventArgs e)
         {
-            if (TopBarIsVisible)
+            if (SideBarIsVisible)
                 return;
             _renderSizeEventDisabled = true;
-            TopBarVisibility = Visibility.Visible;
-            var topBarHeight = 0; // TopBarHeight;
-            _heightOffset = (int)(TopBarHeight * _dpiY);
-            Top = Top - topBarHeight;
-            Height = Height + topBarHeight;
-            MinHeight = MinHeight + topBarHeight;
+            SideBarVisibility = Visibility.Visible;
+            var sideBarWidth = SideBarWidth;
+            _widthOffset = (int)(SideBarWidth * _dpiX);
+            //Top = Top - topBarHeight;
+            Width = Width + sideBarWidth;
+            MinWidth = MinWidth + sideBarWidth;
             _renderSizeEventDisabled = false;
             e.Handled = true;
         }
@@ -853,16 +877,16 @@ namespace PiP_Tool.ViewModels
             var r = new Rectangle(Convert.ToInt32(Left), Convert.ToInt32(Top), Convert.ToInt32(Width), Convert.ToInt32(Height));
             var pa = new Point(Convert.ToInt32(p.X), Convert.ToInt32(p.Y));
 
-            if (!TopBarIsVisible || r.Contains(pa))
+            if (!SideBarIsVisible || r.Contains(pa))
                 return;
-            TopBarVisibility = Visibility.Hidden;
+            SideBarVisibility = Visibility.Hidden;
             _renderSizeEventDisabled = true;
-            _heightOffset = 0;
+            _widthOffset = 0;
 
-            var topBarHeight = 0; // TopBarHeight;
-            Top = Top + topBarHeight;
-            MinHeight = MinHeight - topBarHeight;
-            Height = Height - topBarHeight;
+            var sideBarWidth = SideBarWidth;
+            //Top = Top + topBarHeight;
+            MinWidth = MinWidth - sideBarWidth;
+            Width = Width - sideBarWidth;
             _renderSizeEventDisabled = false;
             e.Handled = true;
         }

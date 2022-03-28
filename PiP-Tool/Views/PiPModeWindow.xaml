@@ -61,49 +61,54 @@
     <Grid 
         VerticalAlignment="Stretch" 
         HorizontalAlignment="Stretch"
-        Background="{StaticResource Background}"
+        Background="#012D2D30"
         Opacity="1"
     >
-        <StackPanel 
-            x:Name="TopBar" 
-            Visibility="{Binding TopBarVisibility, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
-            Orientation="Horizontal" 
+        <Grid
+            VerticalAlignment="Stretch"
             HorizontalAlignment="Right"
-         >
-            <Button HorizontalAlignment="Left" 
-                    ToolTip="{StaticResource SelectNewWindow}"
+            Background="{StaticResource Background}"
+            Opacity="1"
+        >
+            <StackPanel 
+                x:Name="TopBar" 
+                Width="30"
+                Visibility="{Binding SideBarVisibility, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                Orientation="Vertical" 
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Opacity="1"
+             >
+                <Button HorizontalAlignment="Left" 
+                    ToolTip="{StaticResource Quit}"
                     VerticalAlignment="Top" 
-                    Command="{Binding ChangeSelectedWindowCommand}" 
+                    Command="{Binding CloseCommand}" 
+                    Height="30" 
+                    Width="30" 
+                    BorderBrush="#e81123"
+                    Opacity="0.5"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF102;" Foreground="White" />
+                <Button HorizontalAlignment="Left" 
+                    x:Name="SwitchToSelectedWindowButton" 
+                    ToolTip="{StaticResource SwitchToSelectedWindow}"
+                    VerticalAlignment="Top" 
+                    Command="{Binding SwitchToSelectedWindowCommand}" 
                     Height="30" 
                     Width="30" 
                     BorderBrush="#FF7C7C7C"
                     Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF103;" Foreground="White" />
-            <Button HorizontalAlignment="Left" 
-                    x:Name="ForwardInputsButton" 
-                    ToolTip="{StaticResource ForwardInputs}"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128468;" Foreground="White" />
+                <Button HorizontalAlignment="Left" 
+                    x:Name="MinimizeButton" 
+                    ToolTip="{StaticResource Minimize}"
                     VerticalAlignment="Top" 
-                    Command="{Binding ForwardInputsCommand}" 
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                    Command="{Binding MinimizeCommand}" 
                     Height="30" 
                     Width="30" 
                     BorderBrush="#FF7C7C7C"
                     Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Foreground="White" >
-                <TextBlock>&#128377;</TextBlock>
-            </Button>
-            <Button HorizontalAlignment="Left" 
-                    x:Name="VolumeButton" 
-                    ToolTip="{StaticResource SetVolume}"
-                    VerticalAlignment="Top" 
-                    Command="{Binding SetVolumeCommand}" 
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                    Height="30" 
-                    Width="30" 
-                    BorderBrush="#FF7C7C7C"
-                    Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#x1F50A;" Foreground="White" />
-            <Button HorizontalAlignment="Left" 
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128469;" Foreground="White" />
+                <Button HorizontalAlignment="Left" 
                     x:Name="OpacityButton" 
                     ToolTip="{StaticResource SetOpacity}"
                     VerticalAlignment="Top" 
@@ -114,36 +119,41 @@
                     BorderBrush="#FF7C7C7C"
                     Opacity="0.5"
                     FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128065;" Foreground="White" />
-            <Button HorizontalAlignment="Left" 
-                    x:Name="MinimizeButton" 
-                    ToolTip="{StaticResource Minimize}"
+                <Button HorizontalAlignment="Left" 
+                    x:Name="VolumeButton" 
+                    ToolTip="{StaticResource SetVolume}"
                     VerticalAlignment="Top" 
-                    Command="{Binding MinimizeCommand}" 
+                    Command="{Binding SetVolumeCommand}" 
+                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
                     Height="30" 
                     Width="30" 
                     BorderBrush="#FF7C7C7C"
                     Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128469;" Foreground="White" />
-            <Button HorizontalAlignment="Left" 
-                    x:Name="SwitchToSelectedWindowButton" 
-                    ToolTip="{StaticResource SwitchToSelectedWindow}"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#x1F50A;" Foreground="White" />
+                <Button HorizontalAlignment="Left" 
+                    x:Name="ForwardInputsButton" 
+                    ToolTip="{StaticResource ForwardInputs}"
                     VerticalAlignment="Top" 
-                    Command="{Binding SwitchToSelectedWindowCommand}" 
+                    Command="{Binding ForwardInputsCommand}" 
+                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
                     Height="30" 
                     Width="30" 
                     BorderBrush="#FF7C7C7C"
                     Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#128468;" Foreground="White" />
-            <Button HorizontalAlignment="Left" 
-                    ToolTip="{StaticResource Quit}"
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Foreground="White" >
+                    <TextBlock>&#128377;</TextBlock>
+                </Button>
+                <Button HorizontalAlignment="Left" 
+                    ToolTip="{StaticResource SelectNewWindow}"
                     VerticalAlignment="Top" 
-                    Command="{Binding CloseCommand}" 
+                    Command="{Binding ChangeSelectedWindowCommand}" 
                     Height="30" 
                     Width="30" 
-                    BorderBrush="#e81123"
+                    BorderBrush="#FF7C7C7C"
                     Opacity="0.5"
-                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF102;" Foreground="White" />
+                    FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF103;" Foreground="White" />
 
-        </StackPanel>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
