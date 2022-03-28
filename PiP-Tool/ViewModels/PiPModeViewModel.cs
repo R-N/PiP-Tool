@@ -9,6 +9,7 @@ using WPoint = System.Windows.Point;
 using DPoint = System.Drawing.Point;
 using Screen = System.Windows.Forms.Screen;
 using Button = System.Windows.Controls.Button;
+using TextBlock = System.Windows.Controls.TextBlock;
 using System.Windows.Input;
 using System.Windows.Interop;
 using GalaSoft.MvvmLight;
@@ -25,6 +26,7 @@ using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Point = System.Drawing.Point;
 using PiP_Tool.Classes;
 using CSCore.CoreAudioAPI;
+using System.Windows.Media;
 
 namespace PiP_Tool.ViewModels
 {
@@ -243,7 +245,7 @@ namespace PiP_Tool.ViewModels
             MouseDownCommand = new RelayCommand<MouseEventArgs>(MouseDownCommandExecute);
             MouseUpCommand = new RelayCommand<MouseEventArgs>(MouseUpCommandExecute);
             MouseLeaveCommand = new RelayCommand<MouseEventArgs>(MouseLeaveCommandExecute);
-            ForwardInputsCommand = new RelayCommand(ForwardInputsCommandExecute);
+            ForwardInputsCommand = new RelayCommand<object>(ForwardInputsCommandExecute);
             DpiChangedCommand = new RelayCommand(DpiChangedCommandExecute);
 
             MessengerInstance.Register<SelectedWindow>(this, InitSelectedWindow);
@@ -868,9 +870,28 @@ namespace PiP_Tool.ViewModels
         /// <summary>
         /// Executed on click forward input button.
         /// </summary>
-        private void ForwardInputsCommandExecute()
+        private void ForwardInputsCommandExecute(object button)
         {
             this.forwardInputs = !this.forwardInputs;
+            //SetStrikethrough((Button)button, this.forwardInputs);
+            var bc = new BrushConverter();
+            ((Button)button).Background = (Brush)bc.ConvertFrom(this.forwardInputs ? "#FF7C7C7C" : "#007C7C7C");
+        }
+
+        private void SetStrikethrough(Button b, Boolean strikethrough)
+        {
+            var textBlock = (TextBlock)b.Content;
+
+            if (strikethrough)
+            {
+                if (!textBlock.TextDecorations.Any())
+                    textBlock.TextDecorations.Add(
+                        new TextDecoration { Location = TextDecorationLocation.Strikethrough });
+            }
+            else
+            {
+                textBlock.TextDecorations.Clear();
+            }
         }
 
         /// <summary>
