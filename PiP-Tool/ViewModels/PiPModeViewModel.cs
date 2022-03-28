@@ -516,7 +516,7 @@ namespace PiP_Tool.ViewModels
                 case WM.NCMOUSELEAVE:
                 case WM.HSCROLL:
                 case WM.VSCROLL:
-                    Logger.Instance.Debug("Sending key " + msg2);
+                    //Logger.Instance.Debug("Sending key " + msg2);
                     NativeMethods.SendMessage(
                         this._selectedWindow.WindowInfo.Handle,
                         (uint)msg,
