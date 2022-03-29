@@ -826,10 +826,10 @@ namespace PiP_Tool.ViewModels
             this.ThisWindow().ReleaseMouseCapture();
             ShowSidebar();
         }
-        private void ShowSidebar()
+        private bool ShowSidebar()
         {
             if (SideBarIsVisible)
-                return;
+                return true;
             _renderSizeEventDisabled = true;
             SideBarVisibility = Visibility.Visible;
             var sideBarWidth = SideBarWidth;
@@ -838,6 +838,7 @@ namespace PiP_Tool.ViewModels
             Width = Width + sideBarWidth;
             MinWidth = MinWidth + sideBarWidth;
             _renderSizeEventDisabled = false;
+            return true;
         }
         private void MouseMoveCommandExecute(MouseEventArgs e)
         {
@@ -926,28 +927,18 @@ namespace PiP_Tool.ViewModels
             mouseOver = false;
             HideSidebar();
         }
-
-        private void HideSidebar()
+        private bool HideSidebar()
         {
             // Prevent OnMouseEnter, OnMouseLeave loop
             if (!SideBarIsVisible)
-                return;
+                return true;
             Thread.Sleep(50);
             if (!SideBarIsVisible)
-                return;
-            NativeMethods.GetCursorPos(out var p);
-            var r = new Rectangle(
-                Convert.ToInt32(Left * _dpiX), 
-                Convert.ToInt32(Top * _dpiY), 
-                Convert.ToInt32(Width * _dpiX),
-                Convert.ToInt32(Height * _dpiY)
-            );
-            var pa = new Point(Convert.ToInt32(p.X), Convert.ToInt32(p.Y));
-
-            if (r.Contains(pa))
+                return true;
+            if (IsMouseOver())
             {
-                //this.ThisWindow().CaptureMouse();
-                return;
+                WaitMouseLeave();
+                return false;
             }
             SideBarVisibility = Visibility.Hidden;
             this.ThisWindow().ReleaseMouseCapture();
@@ -959,6 +950,57 @@ namespace PiP_Tool.ViewModels
             MinWidth = MinWidth - sideBarWidth;
             Width = Width - sideBarWidth;
             _renderSizeEventDisabled = false;
+            return true;
+        }
+
+        public bool IsMouseOver()
+        {
+
+            NativeMethods.GetCursorPos(out var p);
+            var r = new Rectangle(
+                Convert.ToInt32(Left * _dpiX),
+                Convert.ToInt32(Top * _dpiY),
+                Convert.ToInt32(Width * _dpiX),
+                Convert.ToInt32(Height * _dpiY)
+            );
+            var pa = new Point(Convert.ToInt32(p.X), Convert.ToInt32(p.Y));
+
+            return r.Contains(pa);
+        }
+
+
+        private System.Windows.Threading.DispatcherTimer mouseLeaveTimer = null;
+        public void WaitMouseLeave()
+        {
+            if (mouseLeaveTimer != null)
+            {
+                if (mouseLeaveTimer.IsEnabled)
+                    return;
+                else
+                    StopWaitMouseLeave();
+            }
+            mouseLeaveTimer = new System.Windows.Threading.DispatcherTimer();
+            mouseLeaveTimer.Tick += new EventHandler(WaitMouseLeaveTick);
+            mouseLeaveTimer.Interval = new TimeSpan(0, 0, 0, 0, 100);
+            mouseLeaveTimer.Start();
+        }
+
+        private void WaitMouseLeaveTick(object sender, EventArgs e)
+        {
+            if (mouseOver)
+            {
+                StopWaitMouseLeave();
+                return;
+            }else if (HideSidebar())
+            {
+                StopWaitMouseLeave();
+            }
+        }
+
+        private void StopWaitMouseLeave()
+        {
+            mouseLeaveTimer.Stop();
+            mouseLeaveTimer = null;
         }
 
         /// <summary>
