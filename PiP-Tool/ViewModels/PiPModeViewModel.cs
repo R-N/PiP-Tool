@@ -484,6 +484,7 @@ namespace PiP_Tool.ViewModels
         {
             var msg2 = (WM)msg;
 
+            /*
             if (msg2 == WM.MOUSEHOVER)
             {
                 OnMouseEnter();
@@ -496,6 +497,7 @@ namespace PiP_Tool.ViewModels
             {
                 OnMouseMove();
             }
+            */
 
             if (this.forwardInputs)
             {
@@ -540,7 +542,15 @@ namespace PiP_Tool.ViewModels
                         wParam,
                         lParam
                     );
-                    handled = true;
+                    switch (msg2)
+                    {
+                        case WM.MOUSELEAVE:
+                        case WM.NCMOUSELEAVE:
+                            break;
+                        default:
+                            handled = true;
+                            break;
+                    }
                     break;
                 case WM.MOUSEHOVER:
                 case WM.MOUSEMOVE:
@@ -599,7 +609,17 @@ namespace PiP_Tool.ViewModels
                             wParam,
                             (IntPtr)lParam2
                         );
-                        handled = true;
+                        switch (msg2)
+                        {
+                            case WM.MOUSEHOVER:
+                            case WM.MOUSEMOVE:
+                            case WM.NCMOUSEHOVER:
+                            case WM.NCMOUSELEAVE:
+                                break;
+                            default:
+                                handled = true;
+                                break;
+                        }
                     }
                     catch (System.OverflowException ex)
                     {
