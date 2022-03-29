@@ -1,7 +1,6 @@
 # ![logo][] PiP-Tool (Picture In Picture tool)
 
-[![Release](https://img.shields.io/github/release/LionelJouin/PiP-Tool.svg)](https://github.com/LionelJouin/PiP-Tool/releases)
-[![Release](https://img.shields.io/azure-devops/build/lioneljouin/PiP-Tool/3.svg)](https://lioneljouin.visualstudio.com/PiP-Tool)
+[![Release](https://img.shields.io/github/release/R-N/PiP-Tool.svg)](https://github.com/R-N/PiP-Tool/releases)
 
 [logo]: https://i.imgur.com/SMaB1GI.png
 
@@ -15,14 +14,25 @@ Machine learning is used in this software to predict selected regions in order t
 
 There are no default data provided with this app, data are created and stored locally from your previous uses of this software. When you have validated a selected region to enter in Picture in Picture Mode, region' data are stored and the machine learning' model is improved.
 
+### Changes since LionelJouin version
+
+* Changed target to .NET 4.8
+* Changed topbar to sidebar on the right, so you can place the PiP window at topmost of your screen, touching the top edge
+* Added button & slider to adjust selected window's volume from PiP (slider only shows if the selected window is playing sound and detected by Windows audio mixer)
+* Added button to switch to the selected window (this also minimizes PiP window)
+* Added PiP opacity slider (only 50% to 100%, and sidebar gets semitransparent too)
+* Added minimize button
+* Added workaround to disable aero snap
+* Added feature to forward mouse and keyboard inputs to the selected window (VERY BUGGY)
+
 ## Requirements
 
 * Microsoft Windows Vista or greater (64 bit).
-* Microsoft .NET Framework 4.7.
+* Microsoft .NET Framework 4.8.
 
 ## Installation
 
-Get the [latest version](https://github.com/LionelJouin/PiP-Tool/releases) from the releases section as an MSI installer.
+Get the [latest version](https://github.com/R-N/PiP-Tool/releases) from the releases section as an MSI installer.
 
 ## Screenshot
   
@@ -34,8 +44,9 @@ Get the [latest version](https://github.com/LionelJouin/PiP-Tool/releases) from 
 ## Authors
 
 * **Lionel Jouin** - [LionelJouin](https://github.com/LionelJouin)  
+* **R-N** - [R-N](https://github.com/R-N)  
 
-See also the list of [contributors](https://github.com/LionelJouin/PiP-Tool/graphs/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/R-N/PiP-Tool/graphs/contributors) who participated in this project.
 
 ## License
 
