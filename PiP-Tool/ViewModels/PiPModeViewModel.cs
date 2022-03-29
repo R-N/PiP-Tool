@@ -961,7 +961,13 @@ namespace PiP_Tool.ViewModels
                 return false;
             }
             SideBarVisibility = Visibility.Hidden;
-            this.ThisWindow().ReleaseMouseCapture();
+            try
+            {
+                this.ThisWindow().ReleaseMouseCapture();
+            }catch(NullReferenceException ex)
+            {
+
+            }
             _renderSizeEventDisabled = true;
             _widthOffset = 0;
 
