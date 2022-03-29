@@ -823,6 +823,7 @@ namespace PiP_Tool.ViewModels
         private void OnMouseEnter()
         {
             mouseOver = true;
+            this.ThisWindow().ReleaseMouseCapture();
             ShowSidebar();
         }
         private void ShowSidebar()
@@ -943,9 +944,9 @@ namespace PiP_Tool.ViewModels
             );
             var pa = new Point(Convert.ToInt32(p.X), Convert.ToInt32(p.Y));
 
-            if (!SideBarIsVisible || r.Contains(pa))
+            if (r.Contains(pa))
             {
-                this.ThisWindow().CaptureMouse();
+                //this.ThisWindow().CaptureMouse();
                 return;
             }
             SideBarVisibility = Visibility.Hidden;
