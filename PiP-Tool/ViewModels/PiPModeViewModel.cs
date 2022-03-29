@@ -92,6 +92,8 @@ namespace PiP_Tool.ViewModels
 
         private bool forwardInputs = false;
 
+        private bool mouseOver = false;
+
         public event EventHandler<EventArgs> RequestClose;
 
         public ICommand LoadedCommand { get; }
@@ -103,6 +105,7 @@ namespace PiP_Tool.ViewModels
         public ICommand MinimizeCommand { get; }
         public ICommand SetOpacityCommand { get; }
         public ICommand MouseEnterCommand { get; }
+        public ICommand MouseMoveCommand { get; }
         public ICommand MouseDownCommand { get; }
         public ICommand MouseUpCommand { get; }
         public ICommand MouseLeaveCommand { get; }
@@ -255,6 +258,7 @@ namespace PiP_Tool.ViewModels
             MinimizeCommand = new RelayCommand(MinimizeCommandExecute);
             SetOpacityCommand = new RelayCommand<object>(SetOpacityCommandExecute);
             MouseEnterCommand = new RelayCommand<MouseEventArgs>(MouseEnterCommandExecute);
+            MouseMoveCommand = new RelayCommand<MouseEventArgs>(MouseMoveCommandExecute);
             MouseDownCommand = new RelayCommand<MouseEventArgs>(MouseDownCommandExecute);
             MouseUpCommand = new RelayCommand<MouseEventArgs>(MouseUpCommandExecute);
             MouseLeaveCommand = new RelayCommand<MouseEventArgs>(MouseLeaveCommandExecute);
@@ -474,21 +478,29 @@ namespace PiP_Tool.ViewModels
         /// <param name="msg">The message ID.</param>
         /// <param name="wParam">The message's wParam value.</param>
         /// <param name="lParam">The message's lParam value.</param>
-        /// <param name="handeled">A value that indicates whether the message was handled. Set the value to true if the message was handled; otherwise, false.</param>
+        /// <param name="handled">A value that indicates whether the message was handled. Set the value to true if the message was handled; otherwise, false.</param>
         /// <returns>The appropriate return value depends on the particular message. See the message documentation details for the Win32 message being handled.</returns>
-        private IntPtr EventHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
+        private IntPtr MessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             var msg2 = (WM)msg;
 
             if (msg2 == WM.MOUSEHOVER)
-                ShowSidebar();
+            {
+                OnMouseEnter();
+            }
             else if (msg2 == WM.MOUSELEAVE)
-                HideSidebar();
+            {
+                OnMouseLeave();
+            }
+            else if (msg2 == WM.MOUSEMOVE)
+            {
+                OnMouseMove();
+            }
 
             if (this.forwardInputs)
             {
-                ForwardInputs(msg, wParam, lParam, ref handeled);
-                if (handeled)
+                ForwardInputs(msg, wParam, lParam, ref handled);
+                if (handled)
                     return IntPtr.Zero;
             }
 
@@ -498,13 +510,13 @@ namespace PiP_Tool.ViewModels
                 SetResizeGrip();
 
             if (msg2 == WM.WINDOWPOSCHANGING)
-                return DragMove(hwnd, lParam, ref handeled);
+                return DragMove(hwnd, lParam, ref handled);
 
 
             return IntPtr.Zero;
         }
 
-        private IntPtr ForwardInputs(int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
+        private IntPtr ForwardInputs(int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             var msg2 = (WM)msg;
             switch (msg2)
@@ -528,7 +540,7 @@ namespace PiP_Tool.ViewModels
                         wParam,
                         lParam
                     );
-                    handeled = true;
+                    handled = true;
                     break;
                 case WM.MOUSEHOVER:
                 case WM.MOUSEMOVE:
@@ -587,7 +599,7 @@ namespace PiP_Tool.ViewModels
                             wParam,
                             (IntPtr)lParam2
                         );
-                        handeled = true;
+                        handled = true;
                     }
                     catch (System.OverflowException ex)
                     {
@@ -599,7 +611,7 @@ namespace PiP_Tool.ViewModels
             return IntPtr.Zero;
         }
 
-        private IntPtr DragMove(IntPtr hwnd, IntPtr lParam, ref bool handeled)
+        private IntPtr DragMove(IntPtr hwnd, IntPtr lParam, ref bool handled)
         {
             if (_renderSizeEventDisabled)
                 return IntPtr.Zero;
@@ -619,7 +631,7 @@ namespace PiP_Tool.ViewModels
 
 
             Marshal.StructureToPtr(position, lParam, true);
-            handeled = true;
+            handled = true;
             return IntPtr.Zero;
         }
 
@@ -630,7 +642,7 @@ namespace PiP_Tool.ViewModels
         public void Dispose()
         {
             _mlSource?.Cancel();
-            ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.RemoveHook(EventHook);
+            ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.RemoveHook(MessageHook);
         }
 
         #region commands
@@ -640,7 +652,7 @@ namespace PiP_Tool.ViewModels
         /// </summary>
         private void LoadedCommandExecute()
         {
-            ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.AddHook(EventHook);
+            ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.AddHook(MessageHook);
             var windowsList = Application.Current.Windows.Cast<Window>();
             var thisWindow = windowsList.FirstOrDefault(x => x.DataContext == this);
             if (thisWindow != null)
@@ -804,15 +816,19 @@ namespace PiP_Tool.ViewModels
         /// <param name="e">Event arguments</param>
         private void MouseEnterCommandExecute(MouseEventArgs e)
         {
-            if (SideBarIsVisible)
-                return;
-            ShowSidebar();
+            OnMouseEnter();
             e.Handled = true;
         }
 
+        private void OnMouseEnter()
+        {
+            mouseOver = true;
+            ShowSidebar();
+        }
         private void ShowSidebar()
         {
-
+            if (SideBarIsVisible)
+                return;
             _renderSizeEventDisabled = true;
             SideBarVisibility = Visibility.Visible;
             var sideBarWidth = SideBarWidth;
@@ -821,6 +837,24 @@ namespace PiP_Tool.ViewModels
             Width = Width + sideBarWidth;
             MinWidth = MinWidth + sideBarWidth;
             _renderSizeEventDisabled = false;
+        }
+        private void MouseMoveCommandExecute(MouseEventArgs e)
+        {
+            OnMouseMove();
+            e.Handled = true;
+        }
+
+        private void OnMouseMove()
+        {
+
+            if (mouseOver)
+            {
+                ShowSidebar();
+            }
+            else
+            {
+                HideSidebar();
+            }
         }
 
         /// <summary>
@@ -882,15 +916,24 @@ namespace PiP_Tool.ViewModels
         /// <param name="e">Event arguments</param>
         private void MouseLeaveCommandExecute(MouseEventArgs e)
         {
-            HideSidebar();
+            OnMouseLeave();
             e.Handled = true;
+        }
+
+        private void OnMouseLeave()
+        {
+            mouseOver = false;
+            HideSidebar();
         }
 
         private void HideSidebar()
         {
-
             // Prevent OnMouseEnter, OnMouseLeave loop
+            if (!SideBarIsVisible)
+                return;
             Thread.Sleep(50);
+            if (!SideBarIsVisible)
+                return;
             NativeMethods.GetCursorPos(out var p);
             var r = new Rectangle(
                 Convert.ToInt32(Left * _dpiX), 
@@ -901,8 +944,12 @@ namespace PiP_Tool.ViewModels
             var pa = new Point(Convert.ToInt32(p.X), Convert.ToInt32(p.Y));
 
             if (!SideBarIsVisible || r.Contains(pa))
+            {
+                this.ThisWindow().CaptureMouse();
                 return;
+            }
             SideBarVisibility = Visibility.Hidden;
+            this.ThisWindow().ReleaseMouseCapture();
             _renderSizeEventDisabled = true;
             _widthOffset = 0;
 

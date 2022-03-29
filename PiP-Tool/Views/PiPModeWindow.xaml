@@ -37,6 +37,9 @@
         <i:EventTrigger EventName="MouseEnter">
             <command:EventToCommand Command="{Binding MouseEnterCommand}" PassEventArgsToCommand="True" />
         </i:EventTrigger>
+        <i:EventTrigger EventName="MouseMove">
+            <command:EventToCommand Command="{Binding MouseMoveCommand}" PassEventArgsToCommand="True" />
+        </i:EventTrigger>
         <i:EventTrigger EventName="MouseDown">
             <command:EventToCommand Command="{Binding MouseDownCommand}" PassEventArgsToCommand="True" />
         </i:EventTrigger>
