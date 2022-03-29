@@ -480,6 +480,11 @@ namespace PiP_Tool.ViewModels
         {
             var msg2 = (WM)msg;
 
+            if (msg2 == WM.MOUSEHOVER)
+                ShowSidebar();
+            else if (msg2 == WM.MOUSELEAVE)
+                HideSidebar();
+
             if (this.forwardInputs)
             {
                 ForwardInputs(msg, wParam, lParam, ref handeled);
@@ -801,6 +806,13 @@ namespace PiP_Tool.ViewModels
         {
             if (SideBarIsVisible)
                 return;
+            ShowSidebar();
+            e.Handled = true;
+        }
+
+        private void ShowSidebar()
+        {
+
             _renderSizeEventDisabled = true;
             SideBarVisibility = Visibility.Visible;
             var sideBarWidth = SideBarWidth;
@@ -809,7 +821,6 @@ namespace PiP_Tool.ViewModels
             Width = Width + sideBarWidth;
             MinWidth = MinWidth + sideBarWidth;
             _renderSizeEventDisabled = false;
-            e.Handled = true;
         }
 
         /// <summary>
@@ -871,10 +882,22 @@ namespace PiP_Tool.ViewModels
         /// <param name="e">Event arguments</param>
         private void MouseLeaveCommandExecute(MouseEventArgs e)
         {
+            HideSidebar();
+            e.Handled = true;
+        }
+
+        private void HideSidebar()
+        {
+
             // Prevent OnMouseEnter, OnMouseLeave loop
             Thread.Sleep(50);
             NativeMethods.GetCursorPos(out var p);
-            var r = new Rectangle(Convert.ToInt32(Left), Convert.ToInt32(Top), Convert.ToInt32(Width), Convert.ToInt32(Height));
+            var r = new Rectangle(
+                Convert.ToInt32(Left * _dpiX), 
+                Convert.ToInt32(Top * _dpiY), 
+                Convert.ToInt32(Width * _dpiX),
+                Convert.ToInt32(Height * _dpiY)
+            );
             var pa = new Point(Convert.ToInt32(p.X), Convert.ToInt32(p.Y));
 
             if (!SideBarIsVisible || r.Contains(pa))
@@ -888,7 +911,6 @@ namespace PiP_Tool.ViewModels
             MinWidth = MinWidth - sideBarWidth;
             Width = Width - sideBarWidth;
             _renderSizeEventDisabled = false;
-            e.Handled = true;
         }
 
         /// <summary>

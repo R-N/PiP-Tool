@@ -142,7 +142,6 @@ namespace PiP_Tool.ViewModels
 
         private void OnMixerChanged(object sender, AudioSessionSimpleVolumeChangedEventArgs e)
         {
-            Logger.Instance.Debug("Notified mixer changed to " + e.NewVolume);
             SetSliderValue(e.NewVolume);
         }
 
