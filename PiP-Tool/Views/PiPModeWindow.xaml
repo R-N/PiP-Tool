@@ -61,19 +61,21 @@
          />
     </Window.Background>
 
-    <Grid 
+    <DockPanel 
         VerticalAlignment="Stretch" 
         HorizontalAlignment="Stretch"
         Background="#012D2D30"
         Opacity="1"
     >
-        <Grid
+        <DockPanel
+            DockPanel.Dock="Right"
             VerticalAlignment="Stretch"
             HorizontalAlignment="Right"
             Background="{StaticResource Background}"
             Opacity="1"
         >
             <StackPanel 
+                DockPanel.Dock="Top"
                 x:Name="TopBar" 
                 Width="30"
                 Visibility="{Binding SideBarVisibility, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
@@ -157,6 +159,6 @@
                     FontFamily="/PiP-Tool;component/Assets/#Flaticon" Content="&#xF103;" Foreground="White" />
 
             </StackPanel>
-        </Grid>
-    </Grid>
+        </DockPanel>
+    </DockPanel>
 </Window>
