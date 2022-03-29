@@ -238,6 +238,9 @@ namespace PiP_Tool.ViewModels
         private CancellationToken _mlToken;
         private VolumeDialog volumeDialog = null;
         private OpacityDialog opacityDialog = null;
+        uint windowThreadId = 0;
+        uint myThreadId = 0;
+        bool sizeMove = false;
 
         #endregion
 
@@ -439,6 +442,11 @@ namespace PiP_Tool.ViewModels
             return windowsList.FirstOrDefault(window => window.DataContext == this);
         }
 
+        public IntPtr ThisHandle()
+        {
+            return new WindowInteropHelper(ThisWindow()).Handle;
+        }
+
         /// <summary>
         /// Add Selected region to data (machine learning) and update the model
         /// </summary>
@@ -484,25 +492,9 @@ namespace PiP_Tool.ViewModels
         {
             var msg2 = (WM)msg;
 
-            /*
-            if (msg2 == WM.MOUSEHOVER)
-            {
-                OnMouseEnter();
-            }
-            else if (msg2 == WM.MOUSELEAVE)
-            {
-                OnMouseLeave();
-            }
-            else if (msg2 == WM.MOUSEMOVE)
-            {
-                OnMouseMove();
-            }
-            */
-
             if (this.forwardInputs)
             {
-                ForwardInputs(msg, wParam, lParam, ref handled);
-                if (handled)
+                if (ForwardInputs(msg, wParam, lParam, ref handled))
                     return IntPtr.Zero;
             }
 
@@ -511,6 +503,11 @@ namespace PiP_Tool.ViewModels
             else if (msg2 == WM.LBUTTONUP)
                 SetResizeGrip();
 
+            if (msg2 == WM.ENTERSIZEMOVE)
+                sizeMove = true;
+            else if (msg2 == WM.EXITSIZEMOVE)
+                sizeMove = false;
+
             if (msg2 == WM.WINDOWPOSCHANGING)
                 return DragMove(hwnd, lParam, ref handled);
 
@@ -518,117 +515,190 @@ namespace PiP_Tool.ViewModels
             return IntPtr.Zero;
         }
 
-        private IntPtr ForwardInputs(int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        private bool ForwardInputs(int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            var msg2 = (WM)msg;
-            switch (msg2)
+            /*
+            windowThreadId = NativeMethods.GetWindowThreadProcessId(this._selectedWindow.WindowInfo.Handle, IntPtr.Zero);
+            myThreadId = NativeMethods.GetCurrentThreadId();
+            */
+            try
             {
-                case WM.KEYDOWN:
-                case WM.KEYUP:
-                case WM.IME_KEYDOWN:
-                case WM.IME_KEYUP:
-                case WM.SYSKEYDOWN:
-                case WM.SYSKEYUP:
-                case WM.HOTKEY:
-                case WM.MOUSEACTIVATE:
-                case WM.MOUSELEAVE:
-                case WM.NCMOUSELEAVE:
-                case WM.HSCROLL:
-                case WM.VSCROLL:
-                    //Logger.Instance.Debug("Sending key " + msg2);
-                    NativeMethods.SendMessage(
-                        this._selectedWindow.WindowInfo.Handle,
-                        (uint)msg,
-                        wParam,
-                        lParam
-                    );
-                    switch (msg2)
-                    {
-                        case WM.MOUSELEAVE:
-                        case WM.NCMOUSELEAVE:
-                            break;
-                        default:
-                            handled = true;
-                            break;
-                    }
-                    break;
-                case WM.MOUSEHOVER:
-                case WM.MOUSEMOVE:
-                case WM.MOUSEWHEEL:
-                case WM.MOUSEHWHEEL:
-                case WM.LBUTTONDOWN:
-                case WM.LBUTTONUP:
-                case WM.MBUTTONDOWN:
-                case WM.MBUTTONUP:
-                case WM.RBUTTONDOWN:
-                case WM.RBUTTONUP:
-                case WM.XBUTTONDOWN:
-                case WM.XBUTTONUP:
-                case WM.LBUTTONDBLCLK:
-                case WM.MBUTTONDBLCLK:
-                case WM.RBUTTONDBLCLK:
-                case WM.XBUTTONDBLCLK:
-                case WM.NCMOUSEHOVER:
-                case WM.NCMOUSEMOVE:
-                case WM.NCLBUTTONDOWN:
-                case WM.NCLBUTTONUP:
-                case WM.NCMBUTTONDOWN:
-                case WM.NCMBUTTONUP:
-                case WM.NCRBUTTONDOWN:
-                case WM.NCRBUTTONUP:
-                case WM.NCXBUTTONDOWN:
-                case WM.NCXBUTTONUP:
-                case WM.NCLBUTTONDBLCLK:
-                case WM.NCMBUTTONDBLCLK:
-                case WM.NCRBUTTONDBLCLK:
-                case WM.NCXBUTTONDBLCLK:
-                    try { 
-                        var x = NativeMethods.LParamToX((uint)lParam);
-                        var y = NativeMethods.LParamToY((uint)lParam);
-                        var selectedRect = this._selectedWindow.SelectedRegion;
-                        var thisRect = this.DestRect();
-                        switch (msg2)
-                        {
-                            case WM.MOUSEHOVER:
-                            case WM.MOUSEMOVE:
-                            case WM.MOUSEWHEEL:
-                            case WM.MOUSEHWHEEL:
-                                break;
-                            default:
-                                if (x >= thisRect.Width && x <= thisRect.Width + _widthOffset)
-                                    return IntPtr.Zero;
-                                break;
-                        }
-                        x = (short)((double)x * selectedRect.Width / thisRect.Width);
-                        y = (short)((double)y * selectedRect.Height / thisRect.Height);
-                        //Logger.Instance.Debug("Sending click " + msg2 + " at " + x + ", " + y);
-                        var lParam2 = NativeMethods.CoordToLParam(x, y);
+                //NativeMethods.AttachThreadInput(myThreadId, windowThreadId, true);
+                NativeMethods.BlockInput(true);
+                var msg2 = (WM)msg;
+                switch (msg2)
+                {
+                    case WM.CAPTURECHANGED:
+                        if(lParam == _selectedWindow.WindowInfo.Handle)
+                            TakeFocus();
+                        return false;
+                    case WM.KILLFOCUS:
+                        if (wParam == _selectedWindow.WindowInfo.Handle)
+                            TakeFocus();
+                        return false;
+                    case WM.ACTIVATE:
+                        if ((WA)((uint)wParam & 0xffff) == WA.INACTIVE && lParam == _selectedWindow.WindowInfo.Handle)
+                            TakeFocus();
+                        return false;
+                    case WM.ACTIVATEAPP:
+                        if ((uint)wParam == 0 && lParam == _selectedWindow.WindowInfo.Handle)
+                            TakeFocus();
+                        return false;
+                    case WM.KEYDOWN:
+                    case WM.KEYUP:
+                    case WM.IME_KEYDOWN:
+                    case WM.IME_KEYUP:
+                    case WM.SYSKEYDOWN:
+                    case WM.SYSKEYUP:
+                    case WM.HOTKEY:
+                    //case WM.MOUSEACTIVATE:
+                    case WM.MOUSELEAVE:
+                    case WM.NCMOUSELEAVE:
+                    case WM.HSCROLL:
+                    case WM.VSCROLL:
+                    case WM.SETTEXT:
+                    case WM.CHAR:
+                    case WM.IME_CHAR:
+                    case WM.SYSCHAR:
+                    case WM.DEADCHAR:
+                    case WM.SYSDEADCHAR:
+                    case WM.UNICHAR:
+                    //case WM.SETCURSOR:
+                    //case WM.SETFOCUS:
+                        //Logger.Instance.Debug("Sending key " + msg2);
                         NativeMethods.SendMessage(
                             this._selectedWindow.WindowInfo.Handle,
                             (uint)msg,
                             wParam,
-                            (IntPtr)lParam2
+                            lParam
                         );
                         switch (msg2)
                         {
-                            case WM.MOUSEHOVER:
-                            case WM.MOUSEMOVE:
-                            case WM.NCMOUSEHOVER:
+                            case WM.MOUSELEAVE:
                             case WM.NCMOUSELEAVE:
+                                handled = true;
                                 break;
                             default:
                                 handled = true;
                                 break;
                         }
-                    }
-                    catch (System.OverflowException ex)
-                    {
+                        return true;
+                    //case WM.MOUSEHOVER:
+                    case WM.MOUSEMOVE:
+                    case WM.MOUSEWHEEL:
+                    case WM.MOUSEHWHEEL:
+                    case WM.LBUTTONDOWN:
+                    case WM.LBUTTONUP:
+                    case WM.MBUTTONDOWN:
+                    case WM.MBUTTONUP:
+                    case WM.RBUTTONDOWN:
+                    case WM.RBUTTONUP:
+                    case WM.XBUTTONDOWN:
+                    case WM.XBUTTONUP:
+                    case WM.LBUTTONDBLCLK:
+                    case WM.MBUTTONDBLCLK:
+                    case WM.RBUTTONDBLCLK:
+                    case WM.XBUTTONDBLCLK:
+                    //case WM.NCMOUSEHOVER:
+                    case WM.NCMOUSEMOVE:
+                    case WM.NCLBUTTONDOWN:
+                    case WM.NCLBUTTONUP:
+                    case WM.NCMBUTTONDOWN:
+                    case WM.NCMBUTTONUP:
+                    case WM.NCRBUTTONDOWN:
+                    case WM.NCRBUTTONUP:
+                    case WM.NCXBUTTONDOWN:
+                    case WM.NCXBUTTONUP:
+                    case WM.NCLBUTTONDBLCLK:
+                    case WM.NCMBUTTONDBLCLK:
+                    case WM.NCRBUTTONDBLCLK:
+                    case WM.NCXBUTTONDBLCLK:
+                    //case WM.NCHITTEST:
+                        try
+                        {
+                            var x = NativeMethods.LParamToX((uint)lParam);
+                            var y = NativeMethods.LParamToY((uint)lParam);
+                            var selectedRect = this._selectedWindow.SelectedRegion;
+                            var thisRect = this.DestRect();
+                            switch (msg2)
+                            {
+                                case WM.MOUSEHOVER:
+                                case WM.MOUSEMOVE:
+                                case WM.NCMOUSEHOVER:
+                                case WM.NCMOUSEMOVE:
+                                case WM.MOUSEWHEEL:
+                                case WM.MOUSEHWHEEL:
+                                    break;
+                                default:
+                                    if (x >= thisRect.Width && x <= thisRect.Width + _widthOffset)
+                                        return false;
+                                    break;
+                            }
+                            x = (short)((double)x * selectedRect.Width / thisRect.Width);
+                            y = (short)((double)y * selectedRect.Height / thisRect.Height);
+                            //Logger.Instance.Debug("Sending click " + msg2 + " at " + x + ", " + y);
+                            var lParam2 = NativeMethods.CoordToLParam(x, y);
+                            NativeMethods.SendMessage(
+                                this._selectedWindow.WindowInfo.Handle,
+                                (uint)msg,
+                                wParam,
+                                (IntPtr)lParam2
+                            );
+                            switch (msg2)
+                            {
+                                case WM.MOUSEHOVER:
+                                case WM.MOUSEMOVE:
+                                case WM.NCMOUSEHOVER:
+                                case WM.NCMOUSEMOVE:
+                                    //handled = true;
+                                    break;
+                                default:
+                                    handled = true;
+                                    break;
+                            }
+                        }
+                        catch (System.OverflowException ex)
+                        {
 
-                    }
-                    break;
+                        }
+                        return true;
+                    default:
+                        return false;
+                }
             }
+            finally
+            {
+                //NativeMethods.AttachThreadInput(myThreadId, windowThreadId, true);
+                NativeMethods.BlockInput(false);
+                FreeCapture();
+            }
+        }
 
-            return IntPtr.Zero;
+        private void TakeFocus()
+        {
+            var handle = ThisHandle();
+            NativeMethods.SetForegroundWindow(handle);
+            NativeMethods.SetActiveWindow(handle);
+            NativeMethods.SetFocus(handle);
+            FreeCapture(handle);
+        }
+
+        private void FreeCapture()
+        {
+            FreeCapture(ThisHandle());
+        }
+        private void FreeCapture(IntPtr handle)
+        {
+            var capture = NativeMethods.GetCapture();
+            if (capture == this._selectedWindow.WindowInfo.Handle)
+            //if (capture != IntPtr.Zero && capture != handle)
+            {
+                NativeMethods.SetCapture(handle);
+                NativeMethods.ReleaseCapture();
+                var win = ThisWindow();
+                win.CaptureMouse();
+                win.ReleaseMouseCapture();
+            }
         }
 
         private IntPtr DragMove(IntPtr hwnd, IntPtr lParam, ref bool handled)
@@ -661,6 +731,7 @@ namespace PiP_Tool.ViewModels
         /// </summary>
         public void Dispose()
         {
+            DetachFromSelectedWindow();
             _mlSource?.Cancel();
             ((HwndSource)PresentationSource.FromVisual(ThisWindow()))?.RemoveHook(MessageHook);
         }
@@ -955,6 +1026,8 @@ namespace PiP_Tool.ViewModels
             Thread.Sleep(50);
             if (!SideBarIsVisible)
                 return true;
+            if (this.forwardInputs)
+                return false;
             if (IsMouseOver())
             {
                 WaitMouseLeave();
@@ -1017,7 +1090,7 @@ namespace PiP_Tool.ViewModels
             {
                 StopWaitMouseLeave();
                 return;
-            }else if (HideSidebar())
+            }else if (!sizeMove && HideSidebar())
             {
                 StopWaitMouseLeave();
             }
@@ -1035,9 +1108,39 @@ namespace PiP_Tool.ViewModels
         private void ForwardInputsCommandExecute(object button)
         {
             this.forwardInputs = !this.forwardInputs;
+            if (this.forwardInputs)
+            {
+                //AttachToSelectedWindow();
+                
+            }
+            else
+            {
+                //DetachFromSelectedWindow();
+                if (!this.IsMouseOver())
+                {
+                    mouseOver = false;
+                    HideSidebar();
+                }
+            }
             //SetStrikethrough((Button)button, this.forwardInputs);
             var bc = new BrushConverter();
             ((Button)button).Background = (Brush)bc.ConvertFrom(this.forwardInputs ? "#FF7C7C7C" : "#007C7C7C");
+        }
+
+        private void AttachToSelectedWindow()
+        {
+            windowThreadId = NativeMethods.GetWindowThreadProcessId(this._selectedWindow.WindowInfo.Handle, IntPtr.Zero);
+            myThreadId = NativeMethods.GetCurrentThreadId();
+            NativeMethods.AttachThreadInput(myThreadId, windowThreadId, true);
+        }
+
+        private void DetachFromSelectedWindow()
+        {
+            if (myThreadId <= 0 || windowThreadId <= 0)
+                return;
+            myThreadId = 0;
+            windowThreadId = 0;
+            NativeMethods.AttachThreadInput(myThreadId, windowThreadId, false);
         }
 
         private void SetStrikethrough(Button b, Boolean strikethrough)

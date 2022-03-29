@@ -186,6 +186,13 @@ namespace PiP_Tool.Native
         ForceMinimize = 11
     }
 
+    public enum WA: int
+    {
+        INACTIVE = 0,
+        ACTIVE = 1,
+        CLICKACTIVE = 2
+    }
+
     /// <summary>
     /// Windows Messages
     /// Defined in winuser.h from Windows SDK v6.1
