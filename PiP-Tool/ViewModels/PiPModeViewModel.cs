@@ -211,6 +211,7 @@ namespace PiP_Tool.ViewModels
         /// Gets if topbar is visible
         /// </summary>
         public bool SideBarIsVisible => SideBarVisibility == Visibility.Visible;
+        private bool clicking = false;
 
         #endregion
 
@@ -241,6 +242,7 @@ namespace PiP_Tool.ViewModels
         uint windowThreadId = 0;
         uint myThreadId = 0;
         bool sizeMove = false;
+        bool dontFreeCapture = false;
 
         #endregion
 
@@ -358,7 +360,7 @@ namespace PiP_Tool.ViewModels
         {
             if (_thumbHandle == IntPtr.Zero)
                 return;
-            
+
             var dest = this.DestRect();
             //dest.Right -= _widthOffset;
             var rcSource = _selectedWindow.SelectedRegion;
@@ -444,7 +446,14 @@ namespace PiP_Tool.ViewModels
 
         public IntPtr ThisHandle()
         {
-            return new WindowInteropHelper(ThisWindow()).Handle;
+            return ThisHandle(ThisWindow());
+        }
+
+        private IntPtr ThisHandle(Window window)
+        {
+            if (window == null)
+                return IntPtr.Zero;
+            return new WindowInteropHelper(window).Handle;
         }
 
         /// <summary>
@@ -492,6 +501,20 @@ namespace PiP_Tool.ViewModels
         {
             var msg2 = (WM)msg;
 
+            if (msg2 == WM.ENTERSIZEMOVE)
+                sizeMove = true;
+            else if (msg2 == WM.EXITSIZEMOVE)
+                sizeMove = false;
+
+            if (msg2 == WM.LBUTTONDOWN)
+            {
+                SetNoResize();
+            }
+            else if (msg2 == WM.LBUTTONUP)
+            {
+                SetResizeGrip();
+            }
+
             if (this.forwardInputs)
             {
                 if (ForwardInputs(msg, wParam, lParam, ref handled))
@@ -499,14 +522,13 @@ namespace PiP_Tool.ViewModels
             }
 
             if (msg2 == WM.LBUTTONDOWN)
-                SetNoResize();
+            {
+                clicking = true;
+            }
             else if (msg2 == WM.LBUTTONUP)
-                SetResizeGrip();
-
-            if (msg2 == WM.ENTERSIZEMOVE)
-                sizeMove = true;
-            else if (msg2 == WM.EXITSIZEMOVE)
-                sizeMove = false;
+            {
+                clicking = false;
+            }
 
             if (msg2 == WM.WINDOWPOSCHANGING)
                 return DragMove(hwnd, lParam, ref handled);
@@ -521,6 +543,7 @@ namespace PiP_Tool.ViewModels
             windowThreadId = NativeMethods.GetWindowThreadProcessId(this._selectedWindow.WindowInfo.Handle, IntPtr.Zero);
             myThreadId = NativeMethods.GetCurrentThreadId();
             */
+            dontFreeCapture = false;
             try
             {
                 //NativeMethods.AttachThreadInput(myThreadId, windowThreadId, true);
@@ -576,7 +599,7 @@ namespace PiP_Tool.ViewModels
                         {
                             case WM.MOUSELEAVE:
                             case WM.NCMOUSELEAVE:
-                                handled = true;
+                                //handled = true;
                                 break;
                             default:
                                 handled = true;
@@ -622,16 +645,26 @@ namespace PiP_Tool.ViewModels
                             var thisRect = this.DestRect();
                             switch (msg2)
                             {
-                                case WM.MOUSEHOVER:
                                 case WM.MOUSEMOVE:
-                                case WM.NCMOUSEHOVER:
                                 case WM.NCMOUSEMOVE:
                                 case WM.MOUSEWHEEL:
                                 case WM.MOUSEHWHEEL:
                                     break;
                                 default:
-                                    if (x >= thisRect.Width && x <= thisRect.Width + _widthOffset)
+                                    if (SideBarIsVisible && x >= thisRect.Width && x <= thisRect.Width + _widthOffset)
+                                    {
+
+                                        if (msg2 == WM.LBUTTONDOWN)
+                                        {
+                                            clicking = true;
+                                        }
+                                        else if (msg2 == WM.LBUTTONUP)
+                                        {
+                                            clicking = false;
+                                        }
+                                        dontFreeCapture = true;
                                         return false;
+                                    }
                                     break;
                             }
                             x = (short)((double)x * selectedRect.Width / thisRect.Width);
@@ -670,34 +703,81 @@ namespace PiP_Tool.ViewModels
             {
                 //NativeMethods.AttachThreadInput(myThreadId, windowThreadId, true);
                 NativeMethods.BlockInput(false);
-                FreeCapture();
+                if (!dontFreeCapture && !clicking)
+                    FreeCapture();
             }
         }
 
         private void TakeFocus()
         {
-            var handle = ThisHandle();
+            var window = ThisWindow();
+            var handle = ThisHandle(window);
             NativeMethods.SetForegroundWindow(handle);
             NativeMethods.SetActiveWindow(handle);
             NativeMethods.SetFocus(handle);
-            FreeCapture(handle);
+            FreeCapture(window, handle);
+            if (!dontFreeCapture && !clicking)
+                FreeCapture();
         }
 
         private void FreeCapture()
         {
-            FreeCapture(ThisHandle());
+            FreeCapture(ThisWindow());
         }
-        private void FreeCapture(IntPtr handle)
+
+        private void FreeCapture(Window window)
         {
+            FreeCapture(window, ThisHandle(window));
+        }
+        private void FreeCapture(Window window, IntPtr handle)
+        {
+            if (dontFreeCapture || clicking)
+                return;
             var capture = NativeMethods.GetCapture();
             if (capture == this._selectedWindow.WindowInfo.Handle)
             //if (capture != IntPtr.Zero && capture != handle)
             {
-                NativeMethods.SetCapture(handle);
-                NativeMethods.ReleaseCapture();
-                var win = ThisWindow();
-                win.CaptureMouse();
-                win.ReleaseMouseCapture();
+                try
+                {
+                    NativeMethods.SetCapture(handle);
+                }
+                catch (Exception ex)
+                {
+                }
+                try
+                {
+                    window.CaptureMouse();
+                }
+                catch (Exception ex)
+                {
+                }
+            /*
+            }
+            capture = NativeMethods.GetCapture();
+            if (capture == handle || window.IsMouseCaptured || capture == this._selectedWindow.WindowInfo.Handle)
+            {
+            */
+                try
+                {
+                    NativeMethods.SetCapture(IntPtr.Zero);
+                }
+                catch (Exception ex)
+                {
+                }
+                try
+                {
+                    NativeMethods.ReleaseCapture();
+                }
+                catch (Exception ex)
+                {
+                }
+                try
+                {
+                    window.ReleaseMouseCapture();
+                }
+                catch (Exception ex)
+                {
+                }
             }
         }
 
@@ -1016,6 +1096,7 @@ namespace PiP_Tool.ViewModels
         private void OnMouseLeave()
         {
             mouseOver = false;
+            //FreeCapture();
             HideSidebar();
         }
         private bool HideSidebar()
@@ -1034,13 +1115,6 @@ namespace PiP_Tool.ViewModels
                 return false;
             }
             SideBarVisibility = Visibility.Hidden;
-            try
-            {
-                this.ThisWindow().ReleaseMouseCapture();
-            }catch(NullReferenceException ex)
-            {
-
-            }
             _renderSizeEventDisabled = true;
             _widthOffset = 0;
 
@@ -1049,6 +1123,7 @@ namespace PiP_Tool.ViewModels
             MinWidth = MinWidth - sideBarWidth;
             Width = Width - sideBarWidth;
             _renderSizeEventDisabled = false;
+			StopWaitMouseLeave();
             return true;
         }
 
@@ -1090,7 +1165,7 @@ namespace PiP_Tool.ViewModels
             {
                 StopWaitMouseLeave();
                 return;
-            }else if (!sizeMove && HideSidebar())
+            }else if (!SideBarIsVisible || (!sizeMove && HideSidebar()))
             {
                 StopWaitMouseLeave();
             }
@@ -1098,8 +1173,10 @@ namespace PiP_Tool.ViewModels
 
         private void StopWaitMouseLeave()
         {
-            mouseLeaveTimer.Stop();
-            mouseLeaveTimer = null;
+			if (mouseLeaveTimer != null){
+				mouseLeaveTimer.Stop();
+				mouseLeaveTimer = null;
+			}
         }
 
         /// <summary>
@@ -1108,6 +1185,7 @@ namespace PiP_Tool.ViewModels
         private void ForwardInputsCommandExecute(object button)
         {
             this.forwardInputs = !this.forwardInputs;
+            Logger.Instance.Debug("Forward Inputs " + this.forwardInputs);
             if (this.forwardInputs)
             {
                 //AttachToSelectedWindow();
@@ -1116,7 +1194,7 @@ namespace PiP_Tool.ViewModels
             else
             {
                 //DetachFromSelectedWindow();
-                if (!this.IsMouseOver())
+                if ((!mouseOver && SideBarIsVisible) || (mouseOver && !this.IsMouseOver()))
                 {
                     mouseOver = false;
                     HideSidebar();
